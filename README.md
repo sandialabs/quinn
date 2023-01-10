@@ -12,5 +12,9 @@ Quantification of Uncertainties in Neural Networks (QUiNN) is a python library c
 	examples/ex_fit.py
 	examples/ex_fit_2d.py
 	examples/ex_ufit.py <method> # where method=mcmc, ens or vi.
-
+	
+# Acknowledgements
+	This work is supported by 
+	- U.S. Department of Energy, Office of Fusion Energy Sciences (OFES) under Field Work Proposal Number 20-023149.
+	- Laboratory Directed Research and Development (LDRD) program of Sandia National Laboratories. 
 
