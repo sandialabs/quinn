@@ -1,0 +1,11 @@
+tests
+------------------
+
+test_func
+=========
+.. automodule:: tests.test_mi
+    :members:
+    :undoc-members:
+    :no-private-members:
+    :show-inheritance:
+
