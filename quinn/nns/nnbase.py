@@ -34,6 +34,7 @@ class MLPBase(torch.nn.Module):
         self.outdim = outdim
         self.best_model = None
         self.trained = False
+        self.history = None
 
 
     def forward(self, x):
@@ -88,7 +89,9 @@ class MLPBase(torch.nn.Module):
         #self.fitdict = locals()
         fit_info = nnfit(self, xtrn, ytrn, **kwargs)
         self.best_model = fit_info['best_nnmodel']
+        self.history = fit_info['history']
         self.trained = True
+
 
         return self.best_model
 
