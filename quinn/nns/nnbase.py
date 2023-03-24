@@ -20,6 +20,7 @@ class MLPBase(torch.nn.Module):
         indim (int): Input dimensionality.
         outdim (int): Output dimensionality.
         trained (bool): Whether the NN is already trained.
+        history (list of np.ndarray): List containing training history, namely, [fepoch, loss_trn, loss_trn_full, loss_val]
     """
 
     def __init__(self, indim, outdim):
@@ -34,6 +35,7 @@ class MLPBase(torch.nn.Module):
         self.outdim = outdim
         self.best_model = None
         self.trained = False
+        self.history = None
 
 
     def forward(self, x):
@@ -88,7 +90,9 @@ class MLPBase(torch.nn.Module):
         #self.fitdict = locals()
         fit_info = nnfit(self, xtrn, ytrn, **kwargs)
         self.best_model = fit_info['best_nnmodel']
+        self.history = fit_info['history']
         self.trained = True
+
 
         return self.best_model
 
