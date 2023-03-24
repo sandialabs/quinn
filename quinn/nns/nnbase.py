@@ -20,6 +20,7 @@ class MLPBase(torch.nn.Module):
         indim (int): Input dimensionality.
         outdim (int): Output dimensionality.
         trained (bool): Whether the NN is already trained.
+        history (list of np.ndarray): List containing training history, namely, [fepoch, loss_trn, loss_trn_full, loss_val]
     """
 
     def __init__(self, indim, outdim):

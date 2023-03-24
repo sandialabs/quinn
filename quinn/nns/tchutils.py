@@ -112,6 +112,7 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
         nepochs (int, optional): Number of epochs.
         batch_size (int, optional): Batch size. Default is None, i.e. single batch.
         gradcheck (bool, optional): For code verification, whether we want to check the auto-computed gradients against numerically computed ones. Makes the code slow. Experimental - this is not tested enough.
+        scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch. 
         freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
         freq_plot (int, optional): Frequency, in epochs, of plotting loss convergence graph. Defaults to 1000.
         lhist_suffix (str, optional): Optional uffix of loss history figure filename.
