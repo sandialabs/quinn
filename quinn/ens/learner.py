@@ -65,11 +65,9 @@ class Learner():
             **kwargs (dict): Keyword arguments.
         """
         if hasattr(self.nnmodel, 'fit') and callable(getattr(self.nnmodel, 'fit')):
-            fit_info = self.nnmodel.fit(xtrn, ytrn, **kwargs)
-            self.best_model = fit_info['best_nnmodel']
+            self.best_model = self.nnmodel.fit(xtrn, ytrn, **kwargs)
             # only save last iteration
-            self.history = fit_info['history'][-1]
-
+            self.history = self.nnmodel.history[-1];#fit_info['history'][-1]
         else:
             fit_info = nnfit(self.nnmodel, xtrn, ytrn, **kwargs)
             self.best_model = fit_info['best_nnmodel']

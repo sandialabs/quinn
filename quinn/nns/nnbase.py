@@ -85,7 +85,8 @@ class MLPBase(torch.nn.Module):
             **kwargs (dict): Keyword arguments.
 
         Returns:
-            dict: Dictionary of the results. Keys 'best_fepoch', 'best_epoch', 'best_loss', 'best_nnmodel', 'history'.
+            torch.nn.Module: Best trained instance.
+
         """
         #self.fitdict = locals()
         fit_info = nnfit(self, xtrn, ytrn, **kwargs)
@@ -93,8 +94,7 @@ class MLPBase(torch.nn.Module):
         self.history = fit_info['history']
         self.trained = True
          
-        #self.best_model
-        return fit_info
+        return self.best_model
 
 
     def printParams(self):
