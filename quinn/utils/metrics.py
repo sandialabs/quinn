@@ -3,6 +3,19 @@
 
 import numpy as np
 
+def rel_l2_ens(predictions, targets):
+    """Relative L2 metric for ensamble.
+
+    Args:
+        predictions (np.ndarray): prediction array
+        targets (np.ndarray): target array
+
+    Returns:
+        np.ndarray: relative L2 error
+    """
+    return np.linalg.norm(np.linalg.norm(predictions - targets,axis=1),axis=1)/ np.linalg.norm(targets)
+    
+
 def rel_l2(predictions, targets):
     """Relative L2 metric.
 
