@@ -139,10 +139,11 @@ class RNet(MLPBase):
 
         if self.layer_post:
             out = F.linear(out, self.weight_post, self.bias_post)
-
-        if self.final_layer == 'exp':
+        if self.final_layer == "exp":
             out = torch.exp(out)
-
+        elif self.final_layer == "sum":
+            out = torch.sum(out,dim=1)
+            
         return out
 
     def getParams(self):
