@@ -461,6 +461,140 @@ def plot_sens(sensdata, pars, cases,
 
 #############################################################
 
+def plot_jsens(msens,jsens,varname='VarName', inpar_names=None,figname='senscirc.png'):
+    """Plotting circular joint sensitivities.
+
+    Args:
+        msens (TYPE): Main sensitivities, a 1d array.
+        jsens (TYPE): Joint sensitivities. A 2d square array.
+        varname (str, optional): Variable name.
+        inpar_names (list, optional): List of names for input parameters. Defaults to something generic.
+        figname (str, optional): Saving figure file name.
+    """
+    Nmain=min(len(np.nonzero(msens)[0]),6)
+    Nsec=Nmain-1
+    lwMax=10
+    lwCut=0.2
+    radMain=50
+    radOut=15
+    lext=0.4
+    verbose=1
+
+    nx,ny=jsens.shape
+    # assert nx=ny? compare with msens shape?
+
+    if inpar_names is None:
+        inpar_names = [f'Par{j}' for j in range(nx)]
+
+
+    #jsens=np.log10(jsens);
+    #print msens
+    ind=msens.argsort()[::-1];
+    msensShort=msens[ind[0:Nmain]]
+    if verbose > 0:
+        for i in range(Nmain):
+            print("Variable %d, main sensitivity %lg" % (ind[i],msens[ind[i]]))
+    fig = plt.figure(figsize=(10,8))
+    ax=fig.add_axes([0.05, 0.05, 0.9, 0.9],aspect='equal')
+    #circ=pylab.Circle((0,0),radius=0.5,color='r')
+    circ=mpl.patches.Wedge((0.0,0.0),1.01, 0, 360, width=0.02,color='r')
+    ax.add_patch(circ)
+    maxJfr=-1.e10;
+    for i in range(Nmain):
+        jfr_i=np.array(np.zeros(nx))
+        iord=ind[i]
+        for j in range(iord):
+            jfr_i[j]=jsens[j,iord]
+        for j in range(iord+1,nx):
+            jfr_i[j]=jsens[iord,j]
+        ind_j=jfr_i.argsort()[::-1];
+        if jfr_i[ind_j[0]] > maxJfr: maxJfr = jfr_i[ind_j[0]];
+        if verbose > 1:
+            for j in range(Nsec):
+                print("%d  %d %d" % (iord,ind_j[j],jfr_i[ind_j[j]]))
+    if verbose > 1:
+        print("Maximum joint sensitivity %lg:" % maxJfr)
+    gopar=[]
+    for i in range(Nmain):
+        jfr_i=np.array(np.zeros(nx))
+        iord=ind[i]
+        for j in range(iord):
+            jfr_i[j]=jsens[j,iord]
+        for j in range(iord+1,nx):
+            jfr_i[j]=jsens[iord,j]
+        ind_j=jfr_i.argsort()[::-1];
+        elst=[]
+        for j in range(Nsec):
+            if maxJfr>1.e-16 and jfr_i[ind_j[j]]/maxJfr >= lwCut:
+                posj=[k for k,x in enumerate(ind[:Nmain]) if x == ind_j[j]]
+                if verbose > 2:
+                    print(j,posj)
+                if len(posj) > 0 :
+                    x1=np.cos(0.5*np.pi+(2.0*np.pi*posj[0])/Nmain)
+                    x2=np.cos(0.5*np.pi+(2.0*np.pi*i      )/Nmain)
+                    y1=np.sin(0.5*np.pi+(2.0*np.pi*posj[0])/Nmain)
+                    y2=np.sin(0.5*np.pi+(2.0*np.pi*i      )/Nmain)
+                    lw=lwMax*jfr_i[ind_j[j]]/maxJfr
+                    plt.plot([x1,x2],[y1,y2],'g-',linewidth=lw)
+                    if ( verbose > 2 ):
+                        print(iord,ind[posj[0]])
+                else:
+                    elst.append(j)
+        if len(elst) > 0:
+            asft=[0,-1,1]
+            for k in range(min(len(elst),3)):
+                ang=0.5*np.pi+(2.0*np.pi*i)/Nmain+2*np.pi/12*asft[k]
+                x2=np.cos(0.5*np.pi+(2.0*np.pi*i)/Nmain)
+                y2=np.sin(0.5*np.pi+(2.0*np.pi*i)/Nmain)
+                x1=x2+lext*np.cos(ang)
+                y1=y2+lext*np.sin(ang)
+                lw=lwMax*jfr_i[ind_j[elst[k]]]/maxJfr
+                plt.plot([x1,x2],[y1,y2],'g-',linewidth=lw)
+                plt.plot([x1],[y1],"wo",markersize=radOut,markeredgecolor='k',
+                         markeredgewidth=2)
+                if ( ind_j[elst[k]] > 32 ):
+                    ltext=str(ind_j[elst[k]]+3)
+                elif ( ind_j[elst[k]] > 30 ):
+                    ltext=str(ind_j[elst[k]]+2)
+                else:
+                    ltext=str(ind_j[elst[k]]+1)
+                plt.text(x1+(0.15)*np.cos(ang),y1+(0.15)*np.sin(ang),ltext,
+                            ha='center',va='center',fontsize=16)
+                posj=[k1 for k1,x in enumerate(gopar) if x == ind_j[elst[k]]]
+                if len(posj)==0:
+                    gopar.append(ind_j[elst[k]])
+        if ( verbose > 2 ):
+            print("------------------------")
+    for i in range(Nmain):
+        angl=0.5*np.pi+(2.0*np.pi*i)/Nmain
+        xc=np.cos(angl);
+        yc=np.sin(angl);
+        msize=radMain*msens[ind[i]]/msens[ind[0]]
+        plt.plot([xc],[yc],"bo",markersize=msize,markeredgecolor='k',markeredgewidth=2)
+        da=1.0
+        lab=0.2
+        llab=lab*msens[ind[i]]/msens[ind[0]]
+
+        ltext=str(ind[i]+1)
+        lleg=ltext+" - "+inpar_names[ind[i]]
+        plt.text(xc+(0.08+llab)*np.cos(angl+da),yc+(0.08+llab)*np.sin(angl+da),ltext,
+                 ha='center',va='center',fontsize=16)
+        plt.text(1.6,1.2-0.15*i,lleg,fontsize=16)
+    for k in range(len(gopar)):
+        lleg=str(gopar[k]+1)+" - "+inpar_names[gopar[k]]
+        plt.text(1.6,1.2-0.15*Nmain-0.15*k,lleg,fontsize=16)
+
+    plt.text(0.9,-1.2,varname,fontsize=27)
+
+    ax.set_xlim([-1-1.6*lext,1.8+1.6*lext])
+    ax.set_ylim([-1-1.6*lext,1+1.6*lext])
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    plt.savefig(figname)
+
+#############################################################
+
 def plot_tri(xi, names=None, msize=3, figname='xsam_tri.png'):
     """Plots multidimensional samples in a triangular way, i.e. 1d and 2d cuts.
 
@@ -1362,3 +1496,48 @@ def plot_uc_exact(pred_mean, pred_std, data, nqt=111, label='', ax=None):
 
 
     return frac_qq_exact, qq
+
+
+def plot_samples_pdfs(xx_list, legends=None, colors=None, file_prefix='x', title=''):
+    """Plots multiple pdfs given list of samples
+
+    Args:
+        xx_list (list[np.ndarray]): List of samples.
+        legends (list[str], optional): List of legends. Defaults to generic text.
+        colors (list[str], optional): List of colors. Defaults to generic color cycle.
+        file_prefix (str, optional): Figure file prefix.
+        title (str, optional): Figure title. Default is no title.
+
+    Returns:
+        TYPE: Description
+    """
+    npdfs = len(xx_list)
+    ndim = xx_list[0].shape[1]
+
+    if colors is None:
+        colors = ['b', 'r', 'g']*npdfs #overkill
+    if legends is None:
+        legends = ['Data #'+str(i) for i in range(npdfs)]
+    for idim in range(ndim):
+        ff = plt.figure(figsize=(10,9))
+        for i in range(npdfs):
+            plot_pdf1d(xx_list[i][:, idim], pltype='kde', color=colors[i], lw=1, label=legends[i], ax=plt.gca())
+        h, l = plt.gca().get_legend_handles_labels()
+        plt.xlabel(f'x$_{idim+1}$')
+        plt.gca().legend()
+        plt.title(title)
+        plt.savefig(file_prefix+f'_d{idim}.png')
+        plt.clf()
+        for jdim in range(idim+1, ndim):
+            ff = plt.figure(figsize=(10,9))
+            for i in range(npdfs):
+                plot_pdf2d(xx_list[i][:, idim], xx_list[i][:, jdim], pltype='kde', ncont=10, color=colors[i], lwidth=1, ax=plt.gca())
+
+            plt.xlabel(f'x$_{idim+1}$')
+            plt.ylabel(f'x$_{jdim+1}$')
+            plt.gca().legend(h, l)
+            plt.title(title)
+            plt.savefig(file_prefix+f'_d{idim}_d{jdim}.png')
+            plt.clf()
+
+    return

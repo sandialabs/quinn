@@ -39,3 +39,20 @@ def show_start_end(func):
 
     return inner_func
 
+
+def repeat(number_of_times):
+    """Repeats the function many times.
+
+    Args:
+        number_of_times (int): Number of times to repeat.
+
+    Returns:
+        callable: Decorated function.
+    """
+    def decorate(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for _ in range(number_of_times):
+                func(*args, **kwargs)
+        return wrapper
+    return decorate
