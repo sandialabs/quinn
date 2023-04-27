@@ -5,6 +5,7 @@ import copy
 import torch
 import matplotlib.pyplot as plt
 
+torch.set_default_dtype(torch.double)
 
 def tch(arr, device='cpu', rgrad=True):
     """Convert a numpy array to torch Tensor.
