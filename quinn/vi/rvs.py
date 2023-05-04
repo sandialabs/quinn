@@ -80,8 +80,8 @@ class Gaussian(RV):
             sigma = torch.log1p(torch.exp(self.rho))
         else:
             sigma = torch.exp(self.logsigma)
-
-        epsilon = self.normal.sample(sigma.size())
+        # FIXME: compute epsilon with pyTorch to avoid transfer data from host to device
+        epsilon = self.normal.sample(sigma.size()).to(self.mu.device)
         return self.mu + sigma * epsilon
 
     def log_prob(self, x):

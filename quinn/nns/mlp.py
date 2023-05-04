@@ -21,7 +21,7 @@ class MLP(MLPBase):
 
     def __init__(self, indim, outdim, hls, biasorno=True,
                  activ='relu', bnorm=False, bnlearn=True, dropout=0.0,
-                 final_transform=None):
+                 final_transform=None, device='cpu'):
         """Initialization.
 
         Args:
@@ -35,7 +35,7 @@ class MLP(MLPBase):
             dropout (float, optional): Dropout fraction. Default is 0.0.
             final_transform (str, optional): Final transform, if any (onle 'exp' is implemented). Default is None.
         """
-        super(MLP, self).__init__(indim, outdim)
+        super(MLP, self).__init__(indim, outdim, device=device)
 
         self.nlayers = len(hls)
         assert(self.nlayers > 0)
@@ -83,6 +83,8 @@ class MLP(MLPBase):
 
 
         self.nnmodel = torch.nn.Sequential(*modules)
+        # sync model to device
+        self.to(device)
 
 
 

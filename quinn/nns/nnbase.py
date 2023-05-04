@@ -23,7 +23,7 @@ class MLPBase(torch.nn.Module):
         history (list[np.ndarray]): List containing training history, namely, [fepoch, loss_trn, loss_trn_full, loss_val]
     """
 
-    def __init__(self, indim, outdim):
+    def __init__(self, indim, outdim, device='cpu'):
         """Initialization.
 
         Args:
@@ -36,6 +36,7 @@ class MLPBase(torch.nn.Module):
         self.best_model = None
         self.trained = False
         self.history = None
+        self.device = device
 
 
     def forward(self, x):
@@ -62,10 +63,13 @@ class MLPBase(torch.nn.Module):
         Note:
             Both input and outputs are numpy arrays.
         """
+
+        device = self.best_model.device
+
         if self.trained:
-            return npy(self.best_model(tch(x)))
+            return npy(self.best_model(tch(x, device=device)))
         else:
-            return npy(self.forward(tch(x)))
+            return npy(self.forward(tch(x, device=device)))
 
     def numpar(self):
         """Get the number of parameters of NN.
