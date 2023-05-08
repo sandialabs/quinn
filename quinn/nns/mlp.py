@@ -27,6 +27,7 @@ class MLP(MLPBase):
         Args:
             indim (int): Input dimensionality.
             outdim (int): Output dimensionality.
+            device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
             hls (tuple): Tuple of hidden layer widths.
             biasorno (bool): Whether biases are included or not.
             activ (str, optional): Activation function. Options are 'tanh', 'relu', 'sin' or else identity is used.

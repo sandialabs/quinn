@@ -12,7 +12,7 @@ def tch(arr, device='cpu', rgrad=True):
 
     Args:
         arr (np.ndarray): A numpy array of any size.
-        device (str, optional): Device to send to. The usage is commented out for now.
+        device (str, optional): It represents where tensors are allocated. Default to cpu.
         rgrad (bool, optional): Whether to require gradient tracking or not.
 
     Returns:
@@ -24,7 +24,7 @@ def tch(arr, device='cpu', rgrad=True):
 
 
 def npy(arr):
-    """Convert a torch tensor to numpy array.
+    """Convert a torch tensor to numpy array. 
 
     Args:
         arr (torch.Tensor): Torch tensor of any size.

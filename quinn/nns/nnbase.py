@@ -29,6 +29,7 @@ class MLPBase(torch.nn.Module):
         Args:
             indim (int): Input dimensionality, `d`.
             outdim (int): Output dimensionality, `o`.
+            device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
         """
         super().__init__()
         self.indim = indim

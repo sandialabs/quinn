@@ -35,6 +35,7 @@ class RNet(MLPBase):
         bias_post (torch.nn.Parameter): Bias vector of post-resnet layer, if any.
         paramsw (list[torch.nn.Parameter]): List of Resnet weight matrices.
         paramsb (list[torch.nn.Parameter]): List of Resnet bias vectors.
+        device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
     """
     def __init__(self, rdim, nlayers, wp_function=None, indim=None, outdim=None, biasorno=True, nonlin=True, mlp=False, layer_pre=False, layer_post=False,final_layer=None,device='cpu'):
         """Instantiate ResNet object.
@@ -51,6 +52,7 @@ class RNet(MLPBase):
             layer_pre (bool, optional): Whether there is a pre-resnet linear layer. Defaults to False.
             layer_post (bool, optional): Whether there is a post-resnet linear layer. Defaults to False.
             final_layer (str, optional): If there is a final layer function. Two options: "exp" for exponential function; "sum" for sum function which will reduce rank of the output tensor. Defaults to no final layer.
+            device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
         """
         super().__init__(indim, outdim, device=device)
         if self.indim is None:
