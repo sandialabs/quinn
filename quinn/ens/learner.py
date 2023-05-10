@@ -14,8 +14,6 @@ class Learner():
         best_model (torch.nn.Module): The best trained PyTorch NN module.
         trained (bool): Whether the module is trained or not.
         verbose (bool): Whether to be verbose or not.
-        history (list of doubles): List containing training history of last iteration, namely, [fepoch, loss_trn, loss_trn_full, loss_val]
- 
     """
 
     def __init__(self, nnmodel, verbose=False):
@@ -30,7 +28,6 @@ class Learner():
         self.trained = False
         self.verbose = verbose
         self.best_model = None
-        self.history = None
 
         if self.verbose:
             self.print_params(names_only=True)
@@ -66,13 +63,9 @@ class Learner():
         """
         if hasattr(self.nnmodel, 'fit') and callable(getattr(self.nnmodel, 'fit')):
             self.best_model = self.nnmodel.fit(xtrn, ytrn, **kwargs)
-            # only save last iteration
-            self.history = self.nnmodel.history[-1];#fit_info['history'][-1]
         else:
             fit_info = nnfit(self.nnmodel, xtrn, ytrn, **kwargs)
             self.best_model = fit_info['best_nnmodel']
-            # only save last iteration
-            self.history = fit_info['history'][-1]
         self.trained = True
 
     def predict(self, x):
