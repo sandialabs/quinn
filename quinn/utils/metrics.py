@@ -4,14 +4,14 @@
 import numpy as np
 
 def rel_l2_ens(predictions, targets):
-    """Relative L2 metric for ensamble.
+    """Relative L2 metric for ensemble method (quinn/ens/ens.py).
 
     Args:
-        predictions (np.ndarray): prediction array
+        predictions (list[np.ndarray]): list of prediction arrays from Ens_NN.predict_ens
         targets (np.ndarray): target array
 
     Returns:
-        np.ndarray: relative L2 error
+        np.ndarray: relative L2 errors
     """
     return np.linalg.norm(np.linalg.norm(predictions - targets,axis=1),axis=1)/ np.linalg.norm(targets)
     
