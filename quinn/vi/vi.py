@@ -45,7 +45,8 @@ class VI_NN(QUiNNBase):
 
     def fit(self, xtrn, ytrn, val=None,
             nepochs=600, lrate=0.01, batch_size=None, freq_out=100,
-            nsam=1, datanoise=0.05):
+            freq_plot=1000, wd=0,
+            nsam=1,scheduler_lr=None, datanoise=0.05):
         """Fit function to train the network.
 
         Args:
@@ -57,9 +58,14 @@ class VI_NN(QUiNNBase):
             batch_size (int, optional): Batch size. Default is None, i.e. single batch.
             freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
             nsam (int, optional): Number of samples for ELBO computation. Defaults to 1.
+            scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch. 
             datanoise (float, optional): Datanoise for ELBO computation. Defaults to 0.05.
+            freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
+            wd (float, optional): Optional weight decay (L2 regularization) parameter.
         """
-        ntrn, ndim = xtrn.shape
+
+        shape_xtrn = xtrn.shape
+        ntrn = shape_xtrn[0]
         ntrn_, outdim = ytrn.shape
         assert(ntrn==ntrn_)
 
@@ -76,7 +82,10 @@ class VI_NN(QUiNNBase):
         fit_info = nnfit(self.bmodel, xtrn, ytrn, val=val,
                          loss_xy=self.bmodel.viloss,
                          lrate=lrate, batch_size=batch_size,
-                         nepochs=nepochs, freq_out=freq_out)
+                         nepochs=nepochs,
+                         wd=wd,
+                         freq_plot=freq_plot,
+                         scheduler_lr=scheduler_lr, freq_out=freq_out)
         self.best_model = fit_info['best_nnmodel']
         self.trained = True
 
@@ -334,7 +343,8 @@ class BNet(torch.nn.Module):
         Returns:
             tuple: (log_prior, log_variational_posterior, negative_log_likelihood)
         """
-        batch_size, indim = x.shape
+        shape_x = x.shape
+        batch_size = shape_x[0]
         batch_size_, outdim = target.shape
         assert(batch_size == batch_size_)
         # FIXME: 
