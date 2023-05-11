@@ -82,7 +82,8 @@ class MCMC_NN(QUiNNBase):
             t0 (int, optional): Step where adaptivity begins. Defaults to 100.
             tadapt (int, optional): Adapt/update covariance every `tadapt` steps. Defaults to 1000.
         """
-        ntrn, ndim = xtrn.shape
+        shape_xtrn = xtrn.shape
+        ntrn = shape_xtrn[0]
         ntrn_, outdim = ytrn.shape
 
         # Set dictionary info for posterior computation
