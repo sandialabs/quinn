@@ -108,7 +108,7 @@ def lighten_color(color, amount=0.5):
 
 def plot_dm(datas, models, errorbars=None, labels=None, colors=None,
             axes_labels=['Model', 'Apprx'], figname='dm.png',
-            legendpos='in', msize=4):
+            legendpos='in', msize=4, sigma=1):
     """Plots data-vs-model and overlays `y=x`.
 
     Args:
@@ -126,6 +126,7 @@ def plot_dm(datas, models, errorbars=None, labels=None, colors=None,
         erb = False
     else:
         erb = True
+        print("with error bars")
 
     custom_xlabel = axes_labels[0]
     custom_ylabel = axes_labels[1]
@@ -160,7 +161,7 @@ def plot_dm(datas, models, errorbars=None, labels=None, colors=None,
         for j in range(neach):
             yy = np.append(yy, ddata[:, j])
             if (erb):
-                plt.errorbar(ddata[:, j], model, yerr=[erbl, erbh],
+                plt.errorbar(ddata[:, j], model, yerr=[erbl*sigma, erbh*sigma],
                              fmt='o', markersize=msize,
                              markeredgecolor='w',
                              color=colors[i],

@@ -69,7 +69,10 @@ class QUiNNBase():
 
         return y
 
-    def predict_plot(self, xx_list, yy_list, nmc=100, plot_qt=False, labels=None, colors=None, iouts=None):
+    def predict_plot(self, xx_list, yy_list, nmc=100,
+                    plot_qt=False, labels=None,
+                    colors=None, iouts=None, msize=14, sigma=1,
+                    figname=None):
         """Plots the diagonal comparison figures.
 
         Args:
@@ -118,10 +121,13 @@ class QUiNNBase():
             eeu = [yy[:, iout] for yy in yy_pred_ub_list]
             ee = list(zip(eel, eeu))
 
+            if figname is None:
+                figname = 'fitdiag_o'+str(iout)+'.png'
+
             plot_dm(x1, x2, errorbars=ee, labels=labels, colors=colors,
                     axes_labels=[f'Model output # {iout+1}', f'Fit output # {iout+1}'],
-                    figname='fitdiag_o'+str(iout)+'.png',
-                    legendpos='in', msize=13)
+                    figname=figname,
+                    legendpos='in', msize=msize, sigma=sigma)
 
 
     def plot_1d_fits(self, xx_list, yy_list, domain=None, ngr=111, plot_qt=False, nmc=100, true_model=None, labels=None, colors=None, name_postfix=''):
