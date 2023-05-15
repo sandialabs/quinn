@@ -66,7 +66,6 @@ class Learner():
         else:
             fit_info = nnfit(self.nnmodel, xtrn, ytrn, **kwargs)
             self.best_model = fit_info['best_nnmodel']
-
         self.trained = True
 
     def predict(self, x):

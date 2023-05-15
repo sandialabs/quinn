@@ -50,7 +50,7 @@ class RNet(MLPBase):
             mlp (bool, optional): If True, residual connections are ignored, and this becomes a regular MLP. Default is False.
             layer_pre (bool, optional): Whether there is a pre-resnet linear layer. Defaults to False.
             layer_post (bool, optional): Whether there is a post-resnet linear layer. Defaults to False.
-            final_layer (str, optional): If there is a final layer function. The only current option is 'exp' for exponential function. Defaults to no final layer.
+            final_layer (str, optional): If there is a final layer function. Two options: "exp" for exponential function; "sum" for sum function which will reduce rank of the output tensor. Defaults to no final layer.
         """
         super().__init__(indim, outdim)
         if self.indim is None:
@@ -139,10 +139,11 @@ class RNet(MLPBase):
 
         if self.layer_post:
             out = F.linear(out, self.weight_post, self.bias_post)
-
-        if self.final_layer == 'exp':
+        if self.final_layer == "exp":
             out = torch.exp(out)
-
+        elif self.final_layer == "sum":
+            out = torch.sum(out,dim=1)
+            
         return out
 
     def getParams(self):

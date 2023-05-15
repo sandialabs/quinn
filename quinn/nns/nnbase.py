@@ -86,14 +86,14 @@ class MLPBase(torch.nn.Module):
 
         Returns:
             torch.nn.Module: Best trained instance.
+
         """
         #self.fitdict = locals()
         fit_info = nnfit(self, xtrn, ytrn, **kwargs)
         self.best_model = fit_info['best_nnmodel']
         self.history = fit_info['history']
         self.trained = True
-
-
+         
         return self.best_model
 
 
