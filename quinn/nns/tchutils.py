@@ -12,7 +12,7 @@ def tch(arr, device='cpu', rgrad=True):
 
     Args:
         arr (np.ndarray): A numpy array of any size.
-        device (str, optional): Device to send to. The usage is commented out for now.
+        device (str, optional): It represents where tensors are allocated. Default to cpu.
         rgrad (bool, optional): Whether to require gradient tracking or not.
 
     Returns:
@@ -20,11 +20,11 @@ def tch(arr, device='cpu', rgrad=True):
     """
     # return torch.from_numpy(arr.astype(np.double)).to(device)
     # return torch.from_numpy(arr).double()
-    return torch.tensor(arr, requires_grad=rgrad)
+    return torch.tensor(arr, requires_grad=rgrad, device=device)
 
 
 def npy(arr):
-    """Convert a torch tensor to numpy array.
+    """Convert a torch tensor to numpy array. 
 
     Args:
         arr (torch.Tensor): Torch tensor of any size.
@@ -33,7 +33,7 @@ def npy(arr):
         np.ndarray: Numpy array of the same size as the input torch tensor.
     """
     # return data.detach().numpy()
-    return arr.data.numpy()
+    return arr.cpu().data.numpy()
 
 def print_nnparams(nnmodel, names_only=False):
         """Print parameter names of a PyTorch NN module and optionally, values.
@@ -95,7 +95,8 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
           nepochs=5000, batch_size=None,
           gradcheck=False,
           scheduler_lr=None,
-          freq_out=100, freq_plot=1000, lhist_suffix=''):
+          freq_out=100, freq_plot=1000, lhist_suffix=''
+          ):
     r"""Generic PyTorch NN fit function that is utilized in appropriate NN classes.
 
     Args:
@@ -161,9 +162,10 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
     if batch_size is None or batch_size > ntrn:
         batch_size = ntrn
 
-
-    xtrn_ = tch(xtrn)
-    ytrn_ = tch(ytrn)
+    device = nnmodel.device
+    
+    xtrn_ = tch(xtrn , device=device)
+    ytrn_ = tch(ytrn , device=device)
 
     # Validation data
     if val is None:
@@ -171,9 +173,11 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
     else:
         xval, yval = val
 
-    xval_ = tch(xval)
-    yval_ = tch(yval)
-
+    xval_ = tch(xval , device=device)
+    yval_ = tch(yval , device=device)
+    
+    # print("device: ", device)
+    # print("xval_ is device: ", xval_.get_device(), xval_.device)
     # Training process
     fit_info = {'best_fepoch': 0, 'best_epoch': 0,
                 'best_loss': 1.e+100, 'best_nnmodel': nnmodel,

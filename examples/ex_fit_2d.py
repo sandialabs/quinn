@@ -22,6 +22,14 @@ def main():
     torch.set_default_dtype(torch.double)
     myrc()
 
+    # defaults to cuda:0
+    device_id='cuda:0'
+    # use: ./ex_ufit uq_method device_id, where uq_method: 'mcmc' 'vi' 'ens', and 
+    # device_id: 0, 1,... depending on number of gpus
+    if len(sys.argv) > 1:
+        device_id=sys.argv[1]
+    device = torch.device(device_id if torch.cuda.is_available() else 'cpu')
+    print("Using device",device)
 
     ###########################################################################
     ###########################################################################
@@ -52,7 +60,8 @@ def main():
 
     # Model to fit
     nnet = MLP(ndim, nout, (11,11,11), biasorno=True,
-               activ='tanh', bnorm=False, bnlearn=True, dropout=0.0)
+               activ='tanh', bnorm=False, bnlearn=True, dropout=0.0,
+               device=device)
 
     # Data split to training and validation
     ntrn = int(trn_factor * nall)
@@ -69,7 +78,8 @@ def main():
     bdry1[:,1] = np.linspace(-1.5, 1.5, ngr)
     bdry2 = 1.5*np.ones((ngr, ndim))
     bdry2[:,1] = np.linspace(-1.5, 1.5, ngr)
-    loss = PeriodicLoss([nnet.nnmodel, 10.1, tch(bdry1), tch(bdry2)]) #None #CustomLoss([nnet.nnmodel, 1.0])
+    # pass input tensors with device 
+    loss = PeriodicLoss([nnet.nnmodel, 10.1, tch(bdry1,device=device), tch(bdry2,device=device)]) #None #CustomLoss([nnet.nnmodel, 1.0])
     nnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=10, nepochs=1000, loss=loss)
     print("=======================================")
 

@@ -34,7 +34,8 @@ class NNWrap():
         Returns:
             np.ndarray: A numpy output array of size `(N,o)`.
         """
-        return npy(self.nnmodel.forward(tch(x)))
+        device = self.nnmodel.device 
+        return npy(self.nnmodel.forward(tch(x, device=device)))
 
     def p_flatten(self):
         """Flattens all parameters into an array.
@@ -65,8 +66,9 @@ class NNWrap():
         Note:
             Returning the list is secondary. The most important result is that this function internally fills the values of corresponding parameters.
         """
-
-        ll = [tch(flat_parameter[s:e]) for (s, e) in self.indices]
+        # FIXME: we should only allocate tensors in initialization. 
+        device = self.nnmodel.device
+        ll = [tch(flat_parameter[s:e],device=device) for (s, e) in self.indices]
         for i, p in enumerate(self.nnmodel.parameters()):
             if len(p.shape)>0:
                 ll[i] = ll[i].view(*p.shape)
@@ -89,7 +91,8 @@ def nnwrapper(x, nnmodel):
     Returns:
         np.ndarray: An output numpy array of size `(N,o)`.
     """
-    return npy(nnmodel.forward(tch(x)))
+    device = self.nnmodel.device 
+    return npy(nnmodel.forward(tch(x,device=device)))
 
 
 def nn_surrogate(x, *otherpars):

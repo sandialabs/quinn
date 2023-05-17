@@ -78,4 +78,6 @@ class Learner():
             np.ndarray: Output array of size `(N,o)`.
         """
         assert(self.trained)
-        return npy(self.best_model(tch(x, rgrad=False)))
+        device = self.best_model.device
+        y = self.best_model(tch(x, rgrad=False, device=device))
+        return npy(y)

@@ -32,6 +32,8 @@ class VI_NN(QUiNNBase):
         """
         super().__init__(nnmodel)
         self.bmodel = BNet(nnmodel)
+        device = nnmodel.device
+        self.bmodel.to(device)
         self.verbose = verbose
 
         if self.verbose:
@@ -150,7 +152,8 @@ class VI_NN(QUiNNBase):
             predict_ens() from the parent class will use this to sample an ensemble.
         """
         assert(self.trained)
-        y = npy(self.best_model(tch(x, rgrad=False), sample=True))
+        device = self.best_model.device
+        y = npy(self.best_model(tch(x, rgrad=False,device=device), sample=True))
 
         return y
 
@@ -182,6 +185,8 @@ class BNet(torch.nn.Module):
         assert(isinstance(nnmodel, torch.nn.Module))
 
         self.nnmodel = copy.deepcopy(nnmodel)
+        
+        self.device = nnmodel.device
 
 
         # for name, param in self.nnmodel.named_parameters():
@@ -332,9 +337,11 @@ class BNet(torch.nn.Module):
         batch_size, indim = x.shape
         batch_size_, outdim = target.shape
         assert(batch_size == batch_size_)
-        outputs = torch.zeros(nsam, batch_size, outdim)
-        log_priors = torch.zeros(nsam)
-        log_variational_posteriors = torch.zeros(nsam)
+        # FIXME: 
+        device = x.device
+        outputs = torch.zeros(nsam, batch_size, outdim, device=device)
+        log_priors = torch.zeros(nsam, device=device)
+        log_variational_posteriors = torch.zeros(nsam, device=device)
         for i in range(nsam):
             outputs[i] = self(x, sample=True)
             log_priors[i] = self.log_prior
@@ -346,8 +353,8 @@ class BNet(torch.nn.Module):
         # outputs is MxBxd, target is Bxd, below broadcasting works, and we average over MxBxd (usually d=1)
         #negative_log_likelihood = F.mse_loss(outputs, target, reduction='none').mean()
         #print(outputs.shape, target.shape)
-
-        datasigma = torch.Tensor([likparams[0]])
+        ## FIXME transfer data to device is expensive.
+        datasigma = torch.Tensor([likparams[0]]).to(device)
         negative_log_likelihood = batch_size * torch.log(datasigma) + 0.5*batch_size*1.837+ 0.5 * batch_size * ((outputs - target)**2).mean() / datasigma**2
 
         return log_prior, log_variational_posterior, negative_log_likelihood

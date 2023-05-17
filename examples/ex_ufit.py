@@ -26,10 +26,18 @@ def main():
     torch.set_default_dtype(torch.double)
     myrc()
 
-
     #################################################################################
     #################################################################################
     meth = sys.argv[1] #'mcmc' #'vi' #'ens'
+
+    # defaults to cuda:0
+    device_id='cuda:0'
+    # use: ./ex_ufit uq_method device_id, where uq_method: 'mcmc' 'vi' 'ens', and 
+    # device_id: cuda:0, cuda:1,... depending on number of gpus
+    if len(sys.argv) > 2:
+        device_id=sys.argv[2]
+    device = torch.device(device_id if torch.cuda.is_available() else 'cpu')
+    print("Using device",device)
 
 
     nall = 12 # total number of points
@@ -68,7 +76,8 @@ def main():
                 indim=ndim, outdim=nout,
                 layer_pre=True, layer_post=True,
                 biasorno=True, nonlin=True,
-                mlp=False, final_layer=None)
+                mlp=False, final_layer=None,
+                device=device)
 
     # nnet = MLP(ndim, nout, (11,11,11), biasorno=True,
     #                  activ='relu', bnorm=False, bnlearn=True, dropout=0.0)
