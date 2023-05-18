@@ -126,7 +126,6 @@ def plot_dm(datas, models, errorbars=None, labels=None, colors=None,
         erb = False
     else:
         erb = True
-        print("with error bars")
 
     custom_xlabel = axes_labels[0]
     custom_ylabel = axes_labels[1]

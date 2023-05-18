@@ -37,7 +37,10 @@ class RNet(MLPBase):
         paramsb (list[torch.nn.Parameter]): List of Resnet bias vectors.
         device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
     """
-    def __init__(self, rdim, nlayers, wp_function=None, indim=None, outdim=None, biasorno=True, nonlin=True, mlp=False, layer_pre=False, layer_post=False,final_layer=None,device='cpu'):
+    def __init__(self, rdim, nlayers, wp_function=None, indim=None,
+                       outdim=None, biasorno=True, nonlin=True, mlp=False,
+                       layer_pre=False, layer_post=False,final_layer=None,
+                       device='cpu', init_factor=1):
         """Instantiate ResNet object.
 
         Args:
@@ -53,6 +56,7 @@ class RNet(MLPBase):
             layer_post (bool, optional): Whether there is a post-resnet linear layer. Defaults to False.
             final_layer (str, optional): If there is a final layer function. Two options: "exp" for exponential function; "sum" for sum function which will reduce rank of the output tensor. Defaults to no final layer.
             device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
+            init_factor(int): Multiply initial condition tensors by factor.
         """
         super().__init__(indim, outdim, device=device)
         if self.indim is None:
@@ -72,6 +76,7 @@ class RNet(MLPBase):
         self.layer_pre = layer_pre
         self.layer_post = layer_post
         self.final_layer = final_layer
+        self.init_factor = init_factor
 
         self.rdim = rdim
 
@@ -81,16 +86,16 @@ class RNet(MLPBase):
             assert self.layer_post
 
         if self.layer_pre:
-            self.weight_pre = torch.nn.Parameter((2. * torch.rand(self.rdim, self.indim) -1.)/math.sqrt(self.indim))
-            self.bias_pre = torch.nn.Parameter((2. * torch.rand(self.rdim) -1.)/math.sqrt(self.indim))
+            self.weight_pre = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.rdim, self.indim) -1.)/math.sqrt(self.indim))
+            self.bias_pre = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.rdim) -1.)/math.sqrt(self.indim))
 
         if self.layer_post:
-            self.weight_post = torch.nn.Parameter((2. * torch.rand(self.outdim, self.rdim) -1.)/math.sqrt(self.rdim))
-            self.bias_post = torch.nn.Parameter((2. * torch.rand(self.outdim) -1.)/math.sqrt(self.rdim))
+            self.weight_post = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.outdim, self.rdim) -1.)/math.sqrt(self.rdim))
+            self.bias_post = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.outdim) -1.)/math.sqrt(self.rdim))
 
         pars_w = []
         for ip in range(self.wp_function.npar):
-            ww = torch.nn.Parameter((2. * torch.rand(self.rdim, self.rdim) -1.)/math.sqrt(self.rdim))
+            ww = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.rdim, self.rdim) -1.)/math.sqrt(self.rdim))
             pars_w.append(ww)
             self.register_parameter(name='ww_'+str(ip), param=ww)
             #pars_w.append(torch.nn.Parameter(torch.randn(rdim, rdim)))
@@ -99,7 +104,7 @@ class RNet(MLPBase):
         if self.biasorno:
             pars_b = []
             for ip in range(self.wp_function.npar):
-                bb = torch.nn.Parameter((2.*torch.rand(self.rdim)-1.)/math.sqrt(self.rdim))
+                bb = torch.nn.Parameter(self.init_factor*(2.*torch.rand(self.rdim)-1.)/math.sqrt(self.rdim))
                 pars_b.append(bb)
                 self.register_parameter(name='bb_'+str(ip), param=bb)
 
