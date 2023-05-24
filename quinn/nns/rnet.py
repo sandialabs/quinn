@@ -40,7 +40,7 @@ class RNet(MLPBase):
     def __init__(self, rdim, nlayers, wp_function=None, indim=None,
                        outdim=None, biasorno=True, nonlin=True, mlp=False,
                        layer_pre=False, layer_post=False,final_layer=None,
-                       device='cpu', init_factor=1):
+                       device='cpu', init_factor=1, sum_dim=1):
         """Instantiate ResNet object.
 
         Args:
@@ -55,6 +55,7 @@ class RNet(MLPBase):
             layer_pre (bool, optional): Whether there is a pre-resnet linear layer. Defaults to False.
             layer_post (bool, optional): Whether there is a post-resnet linear layer. Defaults to False.
             final_layer (str, optional): If there is a final layer function. Two options: "exp" for exponential function; "sum" for sum function which will reduce rank of the output tensor. Defaults to no final layer.
+            sum_dim (int, optional): If final layer function is sum, it will select i which dimension to perform sum. Defaults to 1  
             device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
             init_factor(int): Multiply initial condition tensors by factor.
         """
@@ -77,6 +78,8 @@ class RNet(MLPBase):
         self.layer_post = layer_post
         self.final_layer = final_layer
         self.init_factor = init_factor
+        # only for final_layer=sum
+        self.sum_dim = sum_dim
 
         self.rdim = rdim
 
@@ -151,7 +154,7 @@ class RNet(MLPBase):
         if self.final_layer == "exp":
             out = torch.exp(out)
         elif self.final_layer == "sum":
-            out = torch.sum(out,dim=1)
+            out = torch.sum(out,dim=self.sum_dim)
             
         return out
 
