@@ -23,15 +23,20 @@ class VI_NN(QUiNNBase):
         best_model (torch.nn.Module): The best PyTorch NN model found during training.
     """
 
-    def __init__(self, nnmodel, verbose=False):
+    def __init__(self, nnmodel, verbose=False, pi=0.5, sigma1=1.0, sigma2=1.0):
         """Instantiate a VI wrapper object.
 
         Args:
             nnmodel (torch.nn.Module): The underlying PyTorch NN model.
             verbose (bool, optional): Whether to print out model details or not.
+            pi (float): Weight of the first gaussian. The second weight is 1-pi.
+            sigma1 (float): Standard deviation of the first gaussian. Can also be a scalar torch.Tensor.
+            sigma2 (float): Standard deviation of the second gaussian. Can also be a scalar torch.Tensor.
+
         """
         super().__init__(nnmodel)
-        self.bmodel = BNet(nnmodel)
+
+        self.bmodel = BNet(nnmodel,pi=pi,sigma1=sigma1,sigma2=sigma2)
         device = nnmodel.device
         self.bmodel.to(device)
         self.verbose = verbose
@@ -184,11 +189,15 @@ class BNet(torch.nn.Module):
         log_variational_posterior (float): Value of logarithm of variational posterior.
     """
 
-    def __init__(self, nnmodel):
+    def __init__(self, nnmodel, pi=0.5, sigma1=1.0, sigma2=1.0 ):
         """Instantiate a Bayesian NN object given an underlying PyTorch NN module.
 
         Args:
             nnmodel (torch.nn.Module): The original PyTorch NN module.
+            pi (float): Weight of the first gaussian. The second weight is 1-pi.
+            sigma1 (float): Standard deviation of the first gaussian. Can also be a scalar torch.Tensor.
+            sigma2 (float): Standard deviation of the second gaussian. Can also be a scalar torch.Tensor.
+
         """
         super().__init__()
         assert(isinstance(nnmodel, torch.nn.Module))
@@ -196,7 +205,6 @@ class BNet(torch.nn.Module):
         self.nnmodel = copy.deepcopy(nnmodel)
         
         self.device = nnmodel.device
-
 
         # for name, param in self.nnmodel.named_parameters():
         #     print(name)
@@ -217,6 +225,7 @@ class BNet(torch.nn.Module):
             if param.requires_grad:
 
                 #param.requires_grad = False
+                # FIXME 
                 mu = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(-0.2, 0.2))
                 self.register_parameter(name.replace('.', '_')+"_mu", mu)
 
@@ -229,11 +238,9 @@ class BNet(torch.nn.Module):
                     self.params.append(mu)
                     self.params.append(rho)
                 self.rparams.append(Gaussian(mu, logsigma=rho))
-
-                PI = 0.5
-                SIGMA_1 = 1.0 #torch.Tensor([math.exp(0)])
-                SIGMA_2 = 1.0 #torch.Tensor([math.exp(0)])
-                self.param_priors.append(GMM2(PI, SIGMA_1, SIGMA_2))
+                
+                ## PRIOR
+                self.param_priors.append(GMM2(pi, sigma1, sigma2))
                 self.param_names.append(name)
 
             #     for i, param_name in enumerate(self.param_names):
