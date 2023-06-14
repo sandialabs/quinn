@@ -23,7 +23,9 @@ class VI_NN(QUiNNBase):
         best_model (torch.nn.Module): The best PyTorch NN model found during training.
     """
 
-    def __init__(self, nnmodel, verbose=False, pi=0.5, sigma1=1.0, sigma2=1.0):
+    def __init__(self, nnmodel, verbose=False, pi=0.5, sigma1=1.0, sigma2=1.0,
+                       mu_init_lower=-0.2, mu_init_upper=0.2,
+                       rho_init_lower=-5.0, rho_init_upper=-4.0 ):
         """Instantiate a VI wrapper object.
 
         Args:
@@ -32,11 +34,17 @@ class VI_NN(QUiNNBase):
             pi (float): Weight of the first gaussian. The second weight is 1-pi.
             sigma1 (float): Standard deviation of the first gaussian. Can also be a scalar torch.Tensor.
             sigma2 (float): Standard deviation of the second gaussian. Can also be a scalar torch.Tensor.
+            mu_init_lower (float) : Initialization of mu lower value
+            mu_init_upper (float) : Initialization of mu upper value
+            rho_init_lower (float) : Initialization of rho lower value
+            rho_init_upper (float) : Initialization of rho upper value
 
         """
         super().__init__(nnmodel)
 
-        self.bmodel = BNet(nnmodel,pi=pi,sigma1=sigma1,sigma2=sigma2)
+        self.bmodel = BNet(nnmodel,pi=pi,sigma1=sigma1,sigma2=sigma2,
+                                   mu_init_lower=mu_init_lower, mu_init_upper=mu_init_upper,
+                                   rho_init_lower=rho_init_lower, rho_init_upper=rho_init_upper )
         device = nnmodel.device
         self.bmodel.to(device)
         self.verbose = verbose
@@ -189,7 +197,9 @@ class BNet(torch.nn.Module):
         log_variational_posterior (float): Value of logarithm of variational posterior.
     """
 
-    def __init__(self, nnmodel, pi=0.5, sigma1=1.0, sigma2=1.0 ):
+    def __init__(self, nnmodel, pi=0.5, sigma1=1.0, sigma2=1.0,
+                                mu_init_lower=-0.2, mu_init_upper=0.2,
+                                rho_init_lower=-5.0, rho_init_upper=-4.0  ):
         """Instantiate a Bayesian NN object given an underlying PyTorch NN module.
 
         Args:
@@ -197,7 +207,10 @@ class BNet(torch.nn.Module):
             pi (float): Weight of the first gaussian. The second weight is 1-pi.
             sigma1 (float): Standard deviation of the first gaussian. Can also be a scalar torch.Tensor.
             sigma2 (float): Standard deviation of the second gaussian. Can also be a scalar torch.Tensor.
-
+            mu_init_lower (float) : Initialization of mu lower value
+            mu_init_upper (float) : Initialization of mu upper value
+            rho_init_lower (float) : Initialization of rho lower value
+            rho_init_upper (float) : Initialization of rho upper value
         """
         super().__init__()
         assert(isinstance(nnmodel, torch.nn.Module))
@@ -225,11 +238,10 @@ class BNet(torch.nn.Module):
             if param.requires_grad:
 
                 #param.requires_grad = False
-                # FIXME 
-                mu = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(-0.2, 0.2))
+                mu = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(mu_init_lower, mu_init_upper))
                 self.register_parameter(name.replace('.', '_')+"_mu", mu)
 
-                rho = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(-15,-14))
+                rho = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(rho_init_lower, rho_init_upper))
                 self.register_parameter(name.replace('.', '_')+"_rho", rho)
 
                 if i==0:
