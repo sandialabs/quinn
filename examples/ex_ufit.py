@@ -58,6 +58,7 @@ def main():
 
     # Function domain
     domain = np.tile(np.array([-np.pi, np.pi]), (ndim, 1))
+    np.random.seed(1)
 
     # Get x data
     xall = scale01ToDom(np.random.rand(nall, ndim), domain)
@@ -66,6 +67,7 @@ def main():
 
     # Sample test
     if ntst > 0:
+        np.random.seed(100)
         xtst = scale01ToDom(np.random.rand(ntst, ndim), domain)
         if true_model is not None:
             ytst = true_model(xtst, datanoise=datanoise)
@@ -86,7 +88,7 @@ def main():
 
     # Data split to training and validation
     ntrn = int(trn_factor * nall)
-    indperm = np.random.permutation(range(nall))
+    indperm = range(nall)# np.random.permutation(range(nall))
     indtrn = indperm[:ntrn]
     indval = indperm[ntrn:]
     xtrn, xval = xall[indtrn, :], xall[indval, :]

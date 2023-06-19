@@ -59,6 +59,8 @@ class VI_NN(QUiNNBase):
     def fit(self, xtrn, ytrn, val=None,
             nepochs=600, lrate=0.01, batch_size=None, freq_out=100,
             freq_plot=1000, wd=0,
+            cooldown=100,
+            factor=0.95,
             nsam=1,scheduler_lr=None, datanoise=0.05):
         """Fit function to train the network.
 
@@ -75,6 +77,8 @@ class VI_NN(QUiNNBase):
             datanoise (float, optional): Datanoise for ELBO computation. Defaults to 0.05.
             freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
             wd (float, optional): Optional weight decay (L2 regularization) parameter.
+            cooldown (int, optional) : cooldown in ReduceLROnPlateau
+            factor (float, optional) : factor in ReduceLROnPlateau
         """
 
         shape_xtrn = xtrn.shape
@@ -97,6 +101,8 @@ class VI_NN(QUiNNBase):
                          lrate=lrate, batch_size=batch_size,
                          nepochs=nepochs,
                          wd=wd,
+                         cooldown=cooldown,
+                         factor=factor,
                          freq_plot=freq_plot,
                          scheduler_lr=scheduler_lr, freq_out=freq_out)
         self.best_model = fit_info['best_nnmodel']
