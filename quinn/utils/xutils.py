@@ -182,12 +182,12 @@ def get_mi(ord, dim):
 ####################################################################
 ####################################################################
 
-def get_opt_bw(xsam):
+def get_opt_bw(xsam, bwf=1.0):
     """Get the rule-of-thumb optimal bandwidth for kernel density estimation.
 
     Args:
         xsam (np.ndarray): Data array, `(N,d)`
-
+        bwf (float): Factor behind the scaling optimal rule
     Returns:
         np.ndarray: Array of length `d`, the optimal per-dimension bandwidth
     """
@@ -196,6 +196,8 @@ def get_opt_bw(xsam):
     bw=xstd
     bw *= np.power(4./(ndim+2),1./(ndim+4.))
     bw *= np.power(nsam,-1./(ndim+4.))
+
+    bw *= bwf
 
     #xmin, xmax = np.min(xsam, axis=0), np.max(xsam, axis=0)
 

@@ -69,7 +69,7 @@ class QUiNNBase():
 
         return y
 
-    def predict_plot(self, xx_list, yy_list, nmc=100, plot_qt=False, labels=None, colors=None, iouts=None):
+    def predict_plot(self, xx_list, yy_list, nmc=100, plot_qt=False, labels=None, colors=None, iouts=None, name_postfix=''):
         """Plots the diagonal comparison figures.
 
         Args:
@@ -80,6 +80,7 @@ class QUiNNBase():
             labels (list[str], optional): List of labels. If None, set label internally.
             colors (list[str], optional): List of colors. If None, sets colors internally.
             iouts (list[int], optional): List of outputs to plot. If None, plot all.
+            name_postfix (str, optional): Postfix of the filename of the saved fig.
 
         Note:
             There is a similar function for deterministic NN in ``quinn.nns.nnbase``.
@@ -120,7 +121,7 @@ class QUiNNBase():
 
             plot_dm(x1, x2, errorbars=ee, labels=labels, colors=colors,
                     axes_labels=[f'Model output # {iout+1}', f'Fit output # {iout+1}'],
-                    figname='fitdiag_o'+str(iout)+'.png',
+                    figname='fitdiag_o'+str(iout)+'_' + name_postfix+'.png',
                     legendpos='in', msize=13)
 
 
@@ -158,6 +159,7 @@ class QUiNNBase():
             xall = functools.reduce(lambda x,y: np.vstack((x,y)), xx_list)
             domain = get_domain(xall)
 
+        _ = plt.figure(figsize=(12, 8))
 
         if plot_qt:
             mlabel = 'Median Pred.'
