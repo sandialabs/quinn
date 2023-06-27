@@ -344,7 +344,7 @@ class BNet(torch.nn.Module):
 
 
         for i, param_name in enumerate(self.param_names):
-            #print("AAAA ", i, param_name, param_name.split("."))
+            #print("AAAA ", i, param_name, param_name.split("."), par_samples[i])
             self.set_attr(self.nnmodel,param_name.split("."), par_samples[i])
             #print([i for i in self.nnmodel.coefs])
             #self.nnmodel.register_parameter(param_name.replace(".","_"), torch.nn.Parameter(par_samples[i]))
@@ -390,7 +390,7 @@ class BNet(torch.nn.Module):
         #print(outputs.shape, target.shape)
         ## FIXME transfer data to device is expensive.
         datasigma = torch.Tensor([likparams[0]]).to(device)
-        negative_log_likelihood = batch_size * torch.log(datasigma) + 0.5*batch_size*1.837+ 0.5 * batch_size * ((outputs - target)**2).mean() / datasigma**2
+        negative_log_likelihood = batch_size * torch.log(datasigma) + 0.5*batch_size*torch.log(2.0*torch.tensor(math.pi))+ 0.5 * batch_size * ((outputs - target)**2).mean() / datasigma**2
 
         return log_prior, log_variational_posterior, negative_log_likelihood
 

@@ -271,6 +271,7 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
             plt.plot(fepochs, losses_val, label='Validation loss')
 
             plt.legend()
+
             plt.savefig(f'loss_history{lhist_suffix}.png')
             plt.yscale('log')
             plt.savefig(f'loss_history{lhist_suffix}_log.png')

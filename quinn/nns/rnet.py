@@ -102,7 +102,7 @@ class RNet(MLPBase):
             pars_w.append(ww)
             self.register_parameter(name='ww_'+str(ip), param=ww)
             #pars_w.append(torch.nn.Parameter(torch.randn(rdim, rdim)))
-        self.paramsw = pars_w #torch.nn.ParameterList(pars_w)
+        #self.paramsw = pars_w #torch.nn.ParameterList(pars_w)
 
         if self.biasorno:
             pars_b = []
@@ -112,7 +112,7 @@ class RNet(MLPBase):
                 self.register_parameter(name='bb_'+str(ip), param=bb)
 
                 #pars_b.append(torch.nn.Parameter(torch.randn(rdim)))
-            self.paramsb = pars_b #torch.nn.ParameterList(pars_b)
+            #self.paramsb = pars_b #torch.nn.ParameterList(pars_b)
 
 
         if nonlin:
@@ -137,10 +137,14 @@ class RNet(MLPBase):
         if self.layer_pre:
             out = self.activ(F.linear(out, self.weight_pre, self.bias_pre))
 
+        paramsw = [getattr(self, 'ww_'+str(ip)) for ip in range(self.wp_function.npar)]
+        if self.biasorno:
+            paramsb = [getattr(self, 'bb_'+str(ip)) for ip in range(self.wp_function.npar)]
+
         for i in range(self.nlayers+1):
-            weight = self.wp_function(self.paramsw, self.step_size * i)
+            weight = self.wp_function(paramsw, self.step_size * i)
             if self.biasorno:
-                bias = self.wp_function(self.paramsb, self.step_size * i)
+                bias = self.wp_function(paramsb, self.step_size * i)
             else:
                 bias = None
 
@@ -158,31 +162,31 @@ class RNet(MLPBase):
             
         return out
 
-    def getParams(self):
-        """Get parameters of the ResNet.
+    # def getParams(self):
+    #     """Get parameters of the ResNet.
 
-        Returns:
-            list[torch.nn.Parameter] or (list[torch.nn.Parameter], list[torch.nn.Parameter]): List of weights or a tuple containing list of weights and list of biases.
-        """
-        if self.biasorno:
-            return self.paramsw, self.paramsb
-        else:
-            return self.paramsw
+    #     Returns:
+    #         list[torch.nn.Parameter] or (list[torch.nn.Parameter], list[torch.nn.Parameter]): List of weights or a tuple containing list of weights and list of biases.
+    #     """
+    #     if self.biasorno:
+    #         return self.paramsw, self.paramsb
+    #     else:
+    #         return self.paramsw
 
-    def setParams(self, paramsw, paramsb=None):
-        """Setting the parameters.
+    # def setParams(self, paramsw, paramsb=None):
+    #     """Setting the parameters.
 
-        Args:
-            paramsw (list[torch.nn.Parameter]): List of weight matrices.
-            paramsb (list[torch.nn.Parameter], optional): List of bias vectors, if any.
-        """
-        if self.biasorno:
-            self.paramsw = paramsw
-            assert(paramsb is not None)
-            self.paramsb = paramsb
-        else:
-            self.paramsw = paramsw
-            assert(paramsb is None)
+    #     Args:
+    #         paramsw (list[torch.nn.Parameter]): List of weight matrices.
+    #         paramsb (list[torch.nn.Parameter], optional): List of bias vectors, if any.
+    #     """
+    #     if self.biasorno:
+    #         self.paramsw = paramsw
+    #         assert(paramsb is not None)
+    #         self.paramsb = paramsb
+    #     else:
+    #         self.paramsw = paramsw
+    #         assert(paramsb is None)
 
 ########################################################################
 ########################################################################
