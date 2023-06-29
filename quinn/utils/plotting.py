@@ -108,7 +108,7 @@ def lighten_color(color, amount=0.5):
 
 def plot_dm(datas, models, errorbars=None, labels=None, colors=None,
             axes_labels=['Model', 'Apprx'], figname='dm.png',
-            legendpos='in', msize=4, sigma=1):
+            legendpos='in', msize=4):
     """Plots data-vs-model and overlays `y=x`.
 
     Args:
@@ -160,7 +160,7 @@ def plot_dm(datas, models, errorbars=None, labels=None, colors=None,
         for j in range(neach):
             yy = np.append(yy, ddata[:, j])
             if (erb):
-                plt.errorbar(ddata[:, j], model, yerr=[erbl*sigma, erbh*sigma],
+                plt.errorbar(ddata[:, j], model, yerr=[erbl, erbh],
                              fmt='o', markersize=msize,
                              markeredgecolor='w',
                              color=colors[i],
@@ -465,8 +465,8 @@ def plot_jsens(msens,jsens,varname='VarName', inpar_names=None,figname='senscirc
     """Plotting circular joint sensitivities.
 
     Args:
-        msens (TYPE): Main sensitivities, a 1d array.
-        jsens (TYPE): Joint sensitivities. A 2d square array.
+        msens (np.ndarray): Main sensitivities, a 1d array.
+        jsens (np.ndarray): Joint sensitivities. A 2d square array.
         varname (str, optional): Variable name.
         inpar_names (list, optional): List of names for input parameters. Defaults to something generic.
         figname (str, optional): Saving figure file name.
@@ -1507,9 +1507,6 @@ def plot_samples_pdfs(xx_list, legends=None, colors=None, file_prefix='x', title
         colors (list[str], optional): List of colors. Defaults to generic color cycle.
         file_prefix (str, optional): Figure file prefix.
         title (str, optional): Figure title. Default is no title.
-
-    Returns:
-        TYPE: Description
     """
     npdfs = len(xx_list)
     ndim = xx_list[0].shape[1]
@@ -1539,5 +1536,80 @@ def plot_samples_pdfs(xx_list, legends=None, colors=None, file_prefix='x', title
             plt.title(title)
             plt.savefig(file_prefix+f'_d{idim}_d{jdim}.png')
             plt.clf()
+
+    return
+
+def plot_1d(func, domain, ax=None, idim=0, odim=0, nom=None, ngr=100, color='orange', lstyle='-', figname='func1d.png'):
+    """Plotting 1d slice of a function.
+
+    Args:
+        func (callable): The callable function of interest.
+        domain (np.ndarray): A dx2 array indicating the domain of the function.
+        ax (None, optional): Axis object to plot on. If None, plots on current axis.
+        idim (int, optional): Input dimension to plot against.
+        odim (int, optional): Output QoI to plot against. Useful for multioutput funtions.
+        nom (np.ndarray, optional): Nominal value to fix non-plotted dimensions at. An array of size d. If None, uses the domain center.
+        ngr (int, optional): Number of grid points.
+        color (str, optional): Color of the graph.
+        lstyle (str, optional): Linestyle of the graph.
+        figname (str, optional): Figure name to save.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    if nom is None:
+        nom = np.mean(domain, axis=1)
+
+    xg1 = np.linspace(domain[idim, 0], domain[idim, 1], ngr)
+
+    xg = np.tile(nom, (ngr, 1))
+
+
+    xg[:, idim] = xg1
+
+    yg = func(xg)[:, odim]
+
+    ax.plot(xg[:, idim], yg, color=color, linestyle=lstyle)
+    plt.savefig(figname)
+
+    return
+
+def plot_2d(func, domain, ax=None, idim=0, jdim=1, odim=0, nom=None, ngr=33, figname='func2d.png'):
+    """Plotting 2d slice of a function.
+
+    Args:
+        func (callable): The callable function of interest.
+        domain (np.ndarray): A dx2 array indicating the domain of the function.
+        ax (None, optional): Axis object to plot on. If None, plots on current axis.
+        idim (int, optional): First input dimension to plot against.
+        jdim (int, optional): Second input dimension to plot against.
+        odim (int, optional): Output QoI to plot against. Useful for multioutput funtions.
+        nom (np.ndarray, optional): Nominal value to fix non-plotted dimensions at. An array of size d. If None, uses the domain center.
+        ngr (int, optional): Number of grid points.
+        figname (str, optional): Figure name to save.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    if nom is None:
+        nom = np.mean(domain, axis=1)
+
+    xg1 = np.linspace(domain[idim, 0], domain[idim, 1], ngr)
+    xg2 = np.linspace(domain[jdim, 0], domain[jdim, 1], ngr)
+
+    xg = np.tile(nom, (ngr*ngr, 1))
+
+    X, Y = np.meshgrid(xg1, xg2)
+    xx = np.vstack((X.flatten(), Y.flatten())).T  # xx.shape is (ngr^2,2)
+
+    xg[:, idim] = xx[:, 0]
+    xg[:, jdim] = xx[:, 1]
+
+    yg = func(xg)[:, odim].reshape(X.shape)
+
+    cs = ax.contourf(X, Y, yg, 22, cmap='RdYlGn_r')
+    ax.contour(cs, colors='k', linewidths=0.5)
+    plt.colorbar(cs, ax=ax)
+    plt.savefig(figname)
 
     return

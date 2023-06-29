@@ -74,12 +74,13 @@ def main():
 
     # Model to fit
     #nnet = TwoLayerNet(1, 4, 1) #Constant() #MLP_simple((ndim, 5, 5, 5, nout)) #Polynomial(4) #Polynomial3() #TwoLayerNet(1, 4, 1)  #torch.nn.Linear(1,1, bias=False)
-    nnet = RNet(3, 3, wp_function=Poly(0),
-                indim=ndim, outdim=nout,
-                layer_pre=True, layer_post=True,
-                biasorno=True, nonlin=True,
-                mlp=False, final_layer=None,
-                device=device)
+    # nnet = RNet(3, 3, wp_function=Poly(0),
+    #             indim=ndim, outdim=nout,
+    #             layer_pre=True, layer_post=True,
+    #             biasorno=True, nonlin=True,
+    #             mlp=False, final_layer=None,
+    #             device=device)
+    nnet = Polynomial(4)
 
     # nnet = MLP(ndim, nout, (11,11,11), biasorno=True,
     #                  activ='relu', bnorm=False, bnlearn=True, dropout=0.0)

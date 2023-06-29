@@ -122,11 +122,13 @@ class QUiNNBase():
             ee = list(zip(eel, eeu))
 
             if figname is None:
-                figname = 'fitdiag_o'+str(iout)+'.png'
+                figname_ = 'fitdiag_o'+str(iout)+'.png'
+            else:
+                figname = figname_.copy()
 
             plot_dm(x1, x2, errorbars=ee, labels=labels, colors=colors,
                     axes_labels=[f'Model output # {iout+1}', f'Fit output # {iout+1}'],
-                    figname=figname,
+                    figname=figname_,
                     legendpos='in', msize=msize, sigma=sigma)
 
 
