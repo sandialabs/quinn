@@ -461,7 +461,7 @@ def plot_sens(sensdata, pars, cases,
 
 #############################################################
 
-def plot_jsens(msens,jsens,varname='VarName', inpar_names=None,figname='senscirc.png'):
+def plot_jsens(msens,jsens,varname='', inpar_names=None,figname='senscirc.png'):
     """Plotting circular joint sensitivities.
 
     Args:
@@ -493,7 +493,7 @@ def plot_jsens(msens,jsens,varname='VarName', inpar_names=None,figname='senscirc
     msensShort=msens[ind[0:Nmain]]
     if verbose > 0:
         for i in range(Nmain):
-            print("Variable %d, main sensitivity %lg" % (ind[i],msens[ind[i]]))
+            print("Input %d, main sensitivity %lg" % (ind[i],msens[ind[i]]))
     fig = plt.figure(figsize=(10,8))
     ax=fig.add_axes([0.05, 0.05, 0.9, 0.9],aspect='equal')
     #circ=pylab.Circle((0,0),radius=0.5,color='r')
