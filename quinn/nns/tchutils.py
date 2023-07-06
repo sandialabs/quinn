@@ -95,6 +95,8 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
           nepochs=5000, batch_size=None,
           gradcheck=False,
           scheduler_lr=None,
+          cooldown=100,
+          factor=0.95,
           freq_out=100, freq_plot=1000, lhist_suffix=''
           ):
     r"""Generic PyTorch NN fit function that is utilized in appropriate NN classes.
@@ -118,6 +120,8 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
         freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
         freq_plot (int, optional): Frequency, in epochs, of plotting loss convergence graph. Defaults to 1000.
         lhist_suffix (str, optional): Optional uffix of loss history figure filename.
+        cooldown (int, optional) : cooldown in ReduceLROnPlateau
+        factor (float, optional) : factor in ReduceLROnPlateau
 
     Returns:
         dict: Dictionary of the results. Keys 'best_fepoch', 'best_epoch', 'best_loss', 'best_nnmodel', 'history'.
@@ -154,7 +158,7 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
     scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda=lmbd)
 
     if scheduler_lr == "ReduceLROnPlateau":
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', cooldown=100, factor=0.95, verbose=False)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', cooldown=cooldown, factor=factor, verbose=False)
 
 
     ntrn = xtrn.shape[0]
@@ -267,6 +271,7 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
             plt.plot(fepochs, losses_val, label='Validation loss')
 
             plt.legend()
+
             plt.savefig(f'loss_history{lhist_suffix}.png')
             plt.yscale('log')
             plt.savefig(f'loss_history{lhist_suffix}_log.png')

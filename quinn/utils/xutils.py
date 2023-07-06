@@ -122,72 +122,15 @@ def sample_sphere(center=None, rad=1.0, nsam=100):
 ####################################################################
 ####################################################################
 
-def get_npc(ord, dim):
-    """Get number of polynomial basis with a total-degree truncation.
-
-    Args:
-        ord (int): Order `p`
-        dim (int): Dimension `d`
-
-    Returns:
-        int: Number of bases with order up to `p` and dimension `d`, i.e. `(p+d)!/p!d!`.
-    """
-    npc = 1
-
-    for i in range(ord):
-        npc = npc * (dim + i + 1)
-    for i in range(ord):
-        npc = npc / (i + 1)
-
-    assert(npc==int(npc))
-
-    return int(npc)
-
-
-def get_mi(ord, dim):
-    """Get multiindex array with a total-degree truncation.
-
-    Args:
-        ord (int): Order `p`
-        dim (int): Dimension `d`
-
-    Returns:
-        int np.ndarray: Multiindex array of size `(K,d)`, where `K=(p+d)!/p!d!`.
-    """
-
-    assert(dim>0)
-    npc = get_npc(ord, dim)
-    ic = np.ones(dim, dtype='int')
-    iup = 0
-    mi = np.zeros((npc, dim), dtype='int')
-    if (ord > 0):
-        #: first order terms
-        for idim in range(dim):
-            iup += 1
-            mi[iup, idim] = 1
-    if (ord > 1):
-        #: higher order terms
-        for iord in range(2, ord + 1):
-            lessiord = iup
-            for idim in range(dim):
-                for ii in range(idim + 1, dim):
-                    ic[idim] += ic[ii]
-            for idimm in range(dim):
-                for ii in range(lessiord - ic[idimm] + 1, lessiord + 1):
-                    iup += 1
-                    mi[iup] = mi[ii].copy()
-                    mi[iup, idimm] += 1
-    return mi
-
 ####################################################################
 ####################################################################
 
-def get_opt_bw(xsam):
+def get_opt_bw(xsam, bwf=1.0):
     """Get the rule-of-thumb optimal bandwidth for kernel density estimation.
 
     Args:
         xsam (np.ndarray): Data array, `(N,d)`
-
+        bwf (float): Factor behind the scaling optimal rule
     Returns:
         np.ndarray: Array of length `d`, the optimal per-dimension bandwidth
     """
@@ -196,6 +139,8 @@ def get_opt_bw(xsam):
     bw=xstd
     bw *= np.power(4./(ndim+2),1./(ndim+4.))
     bw *= np.power(nsam,-1./(ndim+4.))
+
+    bw *= bwf
 
     #xmin, xmax = np.min(xsam, axis=0), np.max(xsam, axis=0)
 

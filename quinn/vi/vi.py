@@ -23,15 +23,28 @@ class VI_NN(QUiNNBase):
         best_model (torch.nn.Module): The best PyTorch NN model found during training.
     """
 
-    def __init__(self, nnmodel, verbose=False):
+    def __init__(self, nnmodel, verbose=False, pi=0.5, sigma1=1.0, sigma2=1.0,
+                       mu_init_lower=-0.2, mu_init_upper=0.2,
+                       rho_init_lower=-5.0, rho_init_upper=-4.0 ):
         """Instantiate a VI wrapper object.
 
         Args:
             nnmodel (torch.nn.Module): The underlying PyTorch NN model.
             verbose (bool, optional): Whether to print out model details or not.
+            pi (float): Weight of the first gaussian. The second weight is 1-pi.
+            sigma1 (float): Standard deviation of the first gaussian. Can also be a scalar torch.Tensor.
+            sigma2 (float): Standard deviation of the second gaussian. Can also be a scalar torch.Tensor.
+            mu_init_lower (float) : Initialization of mu lower value
+            mu_init_upper (float) : Initialization of mu upper value
+            rho_init_lower (float) : Initialization of rho lower value
+            rho_init_upper (float) : Initialization of rho upper value
+
         """
         super().__init__(nnmodel)
-        self.bmodel = BNet(nnmodel)
+
+        self.bmodel = BNet(nnmodel,pi=pi,sigma1=sigma1,sigma2=sigma2,
+                                   mu_init_lower=mu_init_lower, mu_init_upper=mu_init_upper,
+                                   rho_init_lower=rho_init_lower, rho_init_upper=rho_init_upper )
         device = nnmodel.device
         self.bmodel.to(device)
         self.verbose = verbose
@@ -45,7 +58,10 @@ class VI_NN(QUiNNBase):
 
     def fit(self, xtrn, ytrn, val=None,
             nepochs=600, lrate=0.01, batch_size=None, freq_out=100,
-            nsam=1, datanoise=0.05):
+            freq_plot=1000, wd=0,
+            cooldown=100,
+            factor=0.95,
+            nsam=1,scheduler_lr=None, datanoise=0.05):
         """Fit function to train the network.
 
         Args:
@@ -57,9 +73,16 @@ class VI_NN(QUiNNBase):
             batch_size (int, optional): Batch size. Default is None, i.e. single batch.
             freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
             nsam (int, optional): Number of samples for ELBO computation. Defaults to 1.
+            scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch. 
             datanoise (float, optional): Datanoise for ELBO computation. Defaults to 0.05.
+            freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
+            wd (float, optional): Optional weight decay (L2 regularization) parameter.
+            cooldown (int, optional) : cooldown in ReduceLROnPlateau
+            factor (float, optional) : factor in ReduceLROnPlateau
         """
-        ntrn, ndim = xtrn.shape
+
+        shape_xtrn = xtrn.shape
+        ntrn = shape_xtrn[0]
         ntrn_, outdim = ytrn.shape
         assert(ntrn==ntrn_)
 
@@ -76,7 +99,12 @@ class VI_NN(QUiNNBase):
         fit_info = nnfit(self.bmodel, xtrn, ytrn, val=val,
                          loss_xy=self.bmodel.viloss,
                          lrate=lrate, batch_size=batch_size,
-                         nepochs=nepochs, freq_out=freq_out)
+                         nepochs=nepochs,
+                         wd=wd,
+                         cooldown=cooldown,
+                         factor=factor,
+                         freq_plot=freq_plot,
+                         scheduler_lr=scheduler_lr, freq_out=freq_out)
         self.best_model = fit_info['best_nnmodel']
         self.trained = True
 
@@ -175,11 +203,20 @@ class BNet(torch.nn.Module):
         log_variational_posterior (float): Value of logarithm of variational posterior.
     """
 
-    def __init__(self, nnmodel):
+    def __init__(self, nnmodel, pi=0.5, sigma1=1.0, sigma2=1.0,
+                                mu_init_lower=-0.2, mu_init_upper=0.2,
+                                rho_init_lower=-5.0, rho_init_upper=-4.0  ):
         """Instantiate a Bayesian NN object given an underlying PyTorch NN module.
 
         Args:
             nnmodel (torch.nn.Module): The original PyTorch NN module.
+            pi (float): Weight of the first gaussian. The second weight is 1-pi.
+            sigma1 (float): Standard deviation of the first gaussian. Can also be a scalar torch.Tensor.
+            sigma2 (float): Standard deviation of the second gaussian. Can also be a scalar torch.Tensor.
+            mu_init_lower (float) : Initialization of mu lower value
+            mu_init_upper (float) : Initialization of mu upper value
+            rho_init_lower (float) : Initialization of rho lower value
+            rho_init_upper (float) : Initialization of rho upper value
         """
         super().__init__()
         assert(isinstance(nnmodel, torch.nn.Module))
@@ -187,7 +224,6 @@ class BNet(torch.nn.Module):
         self.nnmodel = copy.deepcopy(nnmodel)
         
         self.device = nnmodel.device
-
 
         # for name, param in self.nnmodel.named_parameters():
         #     print(name)
@@ -208,10 +244,10 @@ class BNet(torch.nn.Module):
             if param.requires_grad:
 
                 #param.requires_grad = False
-                mu = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(-0.2, 0.2))
+                mu = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(mu_init_lower, mu_init_upper))
                 self.register_parameter(name.replace('.', '_')+"_mu", mu)
 
-                rho = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(-15,-14))
+                rho = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(rho_init_lower, rho_init_upper))
                 self.register_parameter(name.replace('.', '_')+"_rho", rho)
 
                 if i==0:
@@ -220,11 +256,9 @@ class BNet(torch.nn.Module):
                     self.params.append(mu)
                     self.params.append(rho)
                 self.rparams.append(Gaussian(mu, logsigma=rho))
-
-                PI = 0.5
-                SIGMA_1 = 1.0 #torch.Tensor([math.exp(0)])
-                SIGMA_2 = 1.0 #torch.Tensor([math.exp(0)])
-                self.param_priors.append(GMM2(PI, SIGMA_1, SIGMA_2))
+                
+                ## PRIOR
+                self.param_priors.append(GMM2(pi, sigma1, sigma2))
                 self.param_names.append(name)
 
             #     for i, param_name in enumerate(self.param_names):
@@ -310,7 +344,7 @@ class BNet(torch.nn.Module):
 
 
         for i, param_name in enumerate(self.param_names):
-            #print("AAAA ", i, param_name, param_name.split("."))
+            #print("AAAA ", i, param_name, param_name.split("."), par_samples[i])
             self.set_attr(self.nnmodel,param_name.split("."), par_samples[i])
             #print([i for i in self.nnmodel.coefs])
             #self.nnmodel.register_parameter(param_name.replace(".","_"), torch.nn.Parameter(par_samples[i]))
@@ -334,7 +368,8 @@ class BNet(torch.nn.Module):
         Returns:
             tuple: (log_prior, log_variational_posterior, negative_log_likelihood)
         """
-        batch_size, indim = x.shape
+        shape_x = x.shape
+        batch_size = shape_x[0]
         batch_size_, outdim = target.shape
         assert(batch_size == batch_size_)
         # FIXME: 
@@ -355,7 +390,7 @@ class BNet(torch.nn.Module):
         #print(outputs.shape, target.shape)
         ## FIXME transfer data to device is expensive.
         datasigma = torch.Tensor([likparams[0]]).to(device)
-        negative_log_likelihood = batch_size * torch.log(datasigma) + 0.5*batch_size*1.837+ 0.5 * batch_size * ((outputs - target)**2).mean() / datasigma**2
+        negative_log_likelihood = batch_size * torch.log(datasigma) + 0.5*batch_size*torch.log(2.0*torch.tensor(math.pi))+ 0.5 * batch_size * ((outputs - target)**2).mean() / datasigma**2
 
         return log_prior, log_variational_posterior, negative_log_likelihood
 

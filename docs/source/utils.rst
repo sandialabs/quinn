@@ -1,14 +1,6 @@
 utils
 ------------------
 
-decors
-=======
-.. automodule:: quinn.utils.decors
-    :members:
-    :undoc-members:
-    :no-private-members:
-    :show-inheritance:
-
 maps
 =======
 .. automodule:: quinn.utils.maps
@@ -17,13 +9,6 @@ maps
     :no-private-members:
     :show-inheritance:
 
-metrics
-=======
-.. automodule:: quinn.utils.metrics
-    :members:
-    :undoc-members:
-    :no-private-members:
-    :show-inheritance:
 
 plotting
 ========

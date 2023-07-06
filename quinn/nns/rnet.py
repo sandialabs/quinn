@@ -37,7 +37,10 @@ class RNet(MLPBase):
         paramsb (list[torch.nn.Parameter]): List of Resnet bias vectors.
         device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
     """
-    def __init__(self, rdim, nlayers, wp_function=None, indim=None, outdim=None, biasorno=True, nonlin=True, mlp=False, layer_pre=False, layer_post=False,final_layer=None,device='cpu'):
+    def __init__(self, rdim, nlayers, wp_function=None, indim=None,
+                       outdim=None, biasorno=True, nonlin=True, mlp=False,
+                       layer_pre=False, layer_post=False,final_layer=None,
+                       device='cpu', init_factor=1, sum_dim=1):
         """Instantiate ResNet object.
 
         Args:
@@ -52,7 +55,9 @@ class RNet(MLPBase):
             layer_pre (bool, optional): Whether there is a pre-resnet linear layer. Defaults to False.
             layer_post (bool, optional): Whether there is a post-resnet linear layer. Defaults to False.
             final_layer (str, optional): If there is a final layer function. Two options: "exp" for exponential function; "sum" for sum function which will reduce rank of the output tensor. Defaults to no final layer.
+            sum_dim (int, optional): If final layer function is sum, it will select i which dimension to perform sum. Defaults to 1  
             device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
+            init_factor(int): Multiply initial condition tensors by factor.
         """
         super().__init__(indim, outdim, device=device)
         if self.indim is None:
@@ -72,6 +77,9 @@ class RNet(MLPBase):
         self.layer_pre = layer_pre
         self.layer_post = layer_post
         self.final_layer = final_layer
+        self.init_factor = init_factor
+        # only for final_layer=sum
+        self.sum_dim = sum_dim
 
         self.rdim = rdim
 
@@ -81,30 +89,30 @@ class RNet(MLPBase):
             assert self.layer_post
 
         if self.layer_pre:
-            self.weight_pre = torch.nn.Parameter((2. * torch.rand(self.rdim, self.indim) -1.)/math.sqrt(self.indim))
-            self.bias_pre = torch.nn.Parameter((2. * torch.rand(self.rdim) -1.)/math.sqrt(self.indim))
+            self.weight_pre = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.rdim, self.indim) -1.)/math.sqrt(self.indim))
+            self.bias_pre = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.rdim) -1.)/math.sqrt(self.indim))
 
         if self.layer_post:
-            self.weight_post = torch.nn.Parameter((2. * torch.rand(self.outdim, self.rdim) -1.)/math.sqrt(self.rdim))
-            self.bias_post = torch.nn.Parameter((2. * torch.rand(self.outdim) -1.)/math.sqrt(self.rdim))
+            self.weight_post = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.outdim, self.rdim) -1.)/math.sqrt(self.rdim))
+            self.bias_post = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.outdim) -1.)/math.sqrt(self.rdim))
 
         pars_w = []
         for ip in range(self.wp_function.npar):
-            ww = torch.nn.Parameter((2. * torch.rand(self.rdim, self.rdim) -1.)/math.sqrt(self.rdim))
+            ww = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.rdim, self.rdim) -1.)/math.sqrt(self.rdim))
             pars_w.append(ww)
             self.register_parameter(name='ww_'+str(ip), param=ww)
             #pars_w.append(torch.nn.Parameter(torch.randn(rdim, rdim)))
-        self.paramsw = pars_w #torch.nn.ParameterList(pars_w)
+        #self.paramsw = pars_w #torch.nn.ParameterList(pars_w)
 
         if self.biasorno:
             pars_b = []
             for ip in range(self.wp_function.npar):
-                bb = torch.nn.Parameter((2.*torch.rand(self.rdim)-1.)/math.sqrt(self.rdim))
+                bb = torch.nn.Parameter(self.init_factor*(2.*torch.rand(self.rdim)-1.)/math.sqrt(self.rdim))
                 pars_b.append(bb)
                 self.register_parameter(name='bb_'+str(ip), param=bb)
 
                 #pars_b.append(torch.nn.Parameter(torch.randn(rdim)))
-            self.paramsb = pars_b #torch.nn.ParameterList(pars_b)
+            #self.paramsb = pars_b #torch.nn.ParameterList(pars_b)
 
 
         if nonlin:
@@ -129,10 +137,14 @@ class RNet(MLPBase):
         if self.layer_pre:
             out = self.activ(F.linear(out, self.weight_pre, self.bias_pre))
 
+        paramsw = [getattr(self, 'ww_'+str(ip)) for ip in range(self.wp_function.npar)]
+        if self.biasorno:
+            paramsb = [getattr(self, 'bb_'+str(ip)) for ip in range(self.wp_function.npar)]
+
         for i in range(self.nlayers+1):
-            weight = self.wp_function(self.paramsw, self.step_size * i)
+            weight = self.wp_function(paramsw, self.step_size * i)
             if self.biasorno:
-                bias = self.wp_function(self.paramsb, self.step_size * i)
+                bias = self.wp_function(paramsb, self.step_size * i)
             else:
                 bias = None
 
@@ -146,35 +158,35 @@ class RNet(MLPBase):
         if self.final_layer == "exp":
             out = torch.exp(out)
         elif self.final_layer == "sum":
-            out = torch.sum(out,dim=1)
+            out = torch.sum(out,dim=self.sum_dim)
             
         return out
 
-    def getParams(self):
-        """Get parameters of the ResNet.
+    # def getParams(self):
+    #     """Get parameters of the ResNet.
 
-        Returns:
-            list[torch.nn.Parameter] or (list[torch.nn.Parameter], list[torch.nn.Parameter]): List of weights or a tuple containing list of weights and list of biases.
-        """
-        if self.biasorno:
-            return self.paramsw, self.paramsb
-        else:
-            return self.paramsw
+    #     Returns:
+    #         list[torch.nn.Parameter] or (list[torch.nn.Parameter], list[torch.nn.Parameter]): List of weights or a tuple containing list of weights and list of biases.
+    #     """
+    #     if self.biasorno:
+    #         return self.paramsw, self.paramsb
+    #     else:
+    #         return self.paramsw
 
-    def setParams(self, paramsw, paramsb=None):
-        """Setting the parameters.
+    # def setParams(self, paramsw, paramsb=None):
+    #     """Setting the parameters.
 
-        Args:
-            paramsw (list[torch.nn.Parameter]): List of weight matrices.
-            paramsb (list[torch.nn.Parameter], optional): List of bias vectors, if any.
-        """
-        if self.biasorno:
-            self.paramsw = paramsw
-            assert(paramsb is not None)
-            self.paramsb = paramsb
-        else:
-            self.paramsw = paramsw
-            assert(paramsb is None)
+    #     Args:
+    #         paramsw (list[torch.nn.Parameter]): List of weight matrices.
+    #         paramsb (list[torch.nn.Parameter], optional): List of bias vectors, if any.
+    #     """
+    #     if self.biasorno:
+    #         self.paramsw = paramsw
+    #         assert(paramsb is not None)
+    #         self.paramsb = paramsb
+    #     else:
+    #         self.paramsw = paramsw
+    #         assert(paramsb is None)
 
 ########################################################################
 ########################################################################
