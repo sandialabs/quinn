@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from . import decors
 from . import maps
 from . import metrics
 from . import plotting

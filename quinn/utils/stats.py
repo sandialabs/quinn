@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-"""Utilities for descriptive statistics of data."""
-
 
 import numpy as np
 

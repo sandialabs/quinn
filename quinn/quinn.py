@@ -69,7 +69,10 @@ class QUiNNBase():
 
         return y
 
-    def predict_plot(self, xx_list, yy_list, nmc=100, plot_qt=False, labels=None, colors=None, iouts=None, name_postfix=''):
+    def predict_plot(self, xx_list, yy_list, nmc=100,
+                    plot_qt=False, labels=None,
+                    colors=None, iouts=None, msize=14, sigma=1,
+                    figname=None):
         """Plots the diagonal comparison figures.
 
         Args:
@@ -80,7 +83,7 @@ class QUiNNBase():
             labels (list[str], optional): List of labels. If None, set label internally.
             colors (list[str], optional): List of colors. If None, sets colors internally.
             iouts (list[int], optional): List of outputs to plot. If None, plot all.
-            name_postfix (str, optional): Postfix of the filename of the saved fig.
+            figname (str, optional): Name of the figure to be saved.
 
         Note:
             There is a similar function for deterministic NN in ``quinn.nns.nnbase``.
@@ -119,10 +122,15 @@ class QUiNNBase():
             eeu = [yy[:, iout] for yy in yy_pred_ub_list]
             ee = list(zip(eel, eeu))
 
+            if figname is None:
+                figname_ = 'fitdiag_o'+str(iout)+'.png'
+            else:
+                figname = figname_.copy()
+
             plot_dm(x1, x2, errorbars=ee, labels=labels, colors=colors,
                     axes_labels=[f'Model output # {iout+1}', f'Fit output # {iout+1}'],
-                    figname='fitdiag_o'+str(iout)+'_' + name_postfix+'.png',
-                    legendpos='in', msize=13)
+                    figname=figname_,
+                    legendpos='in', msize=msize)
 
 
     def plot_1d_fits(self, xx_list, yy_list, domain=None, ngr=111, plot_qt=False, nmc=100, true_model=None, labels=None, colors=None, name_postfix=''):
