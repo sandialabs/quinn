@@ -34,7 +34,11 @@ class NNWrap():
         Returns:
             np.ndarray: A numpy output array of size `(N,o)`.
         """
-        device = self.nnmodel.device 
+        try:
+            device = self.nnmodel.device
+        except AttributeError:
+            device = 'cpu'
+
         return npy(self.nnmodel.forward(tch(x, device=device)))
 
     def p_flatten(self):
@@ -67,7 +71,11 @@ class NNWrap():
             Returning the list is secondary. The most important result is that this function internally fills the values of corresponding parameters.
         """
         # FIXME: we should only allocate tensors in initialization. 
-        device = self.nnmodel.device
+        try:
+            device = self.nnmodel.device
+        except AttributeError:
+            device = 'cpu'
+
         ll = [tch(flat_parameter[s:e],device=device) for (s, e) in self.indices]
         for i, p in enumerate(self.nnmodel.parameters()):
             if len(p.shape)>0:

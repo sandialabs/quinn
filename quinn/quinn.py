@@ -129,7 +129,7 @@ class QUiNNBase():
             plot_dm(x1, x2, errorbars=ee, labels=labels, colors=colors,
                     axes_labels=[f'Model output # {iout+1}', f'Fit output # {iout+1}'],
                     figname=figname_,
-                    legendpos='in', msize=msize, sigma=sigma)
+                    legendpos='in', msize=msize)
 
 
     def plot_1d_fits(self, xx_list, yy_list, domain=None, ngr=111, plot_qt=False, nmc=100, true_model=None, labels=None, colors=None, name_postfix=''):

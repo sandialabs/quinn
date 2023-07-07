@@ -78,6 +78,10 @@ class Learner():
             np.ndarray: Output array of size `(N,o)`.
         """
         assert(self.trained)
-        device = self.best_model.device
+        try:
+            device = self.best_model.device
+        except AttributeError:
+            device = 'cpu'
+
         y = self.best_model(tch(x, rgrad=False, device=device))
         return npy(y)
