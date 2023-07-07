@@ -166,7 +166,10 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
     if batch_size is None or batch_size > ntrn:
         batch_size = ntrn
 
-    device = nnmodel.device
+    try:
+        device = nnmodel.device
+    except AttributeError:
+        device = 'cpu'
     
     xtrn_ = tch(xtrn , device=device)
     ytrn_ = tch(ytrn , device=device)

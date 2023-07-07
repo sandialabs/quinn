@@ -45,8 +45,12 @@ class VI_NN(QUiNNBase):
         self.bmodel = BNet(nnmodel,pi=pi,sigma1=sigma1,sigma2=sigma2,
                                    mu_init_lower=mu_init_lower, mu_init_upper=mu_init_upper,
                                    rho_init_lower=rho_init_lower, rho_init_upper=rho_init_upper )
-        device = nnmodel.device
-        self.bmodel.to(device)
+        try:
+            self.device = nnmodel.device
+        except AttributeError:
+            self.device = 'cpu'
+
+        self.bmodel.to(self.device)
         self.verbose = verbose
 
         if self.verbose:
@@ -223,8 +227,10 @@ class BNet(torch.nn.Module):
 
         self.nnmodel = copy.deepcopy(nnmodel)
         
-        self.device = nnmodel.device
-
+        try:
+            self.device = nnmodel.device
+        except AttributeError:
+            self.device = 'cpu'
         # for name, param in self.nnmodel.named_parameters():
         #     print(name)
         #     if param.requires_grad:
