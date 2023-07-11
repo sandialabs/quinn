@@ -64,8 +64,10 @@ class MLPBase(torch.nn.Module):
         Note:
             Both input and outputs are numpy arrays.
         """
-
-        device = self.best_model.device
+        try:
+            device = self.best_model.device
+        except AttributeError:
+            device = 'cpu'
 
         if self.trained:
             return npy(self.best_model(tch(x, device=device)))
