@@ -77,7 +77,7 @@ class VI_NN(QUiNNBase):
             batch_size (int, optional): Batch size. Default is None, i.e. single batch.
             freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
             nsam (int, optional): Number of samples for ELBO computation. Defaults to 1.
-            scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch. 
+            scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch.
             datanoise (float, optional): Datanoise for ELBO computation. Defaults to 0.05.
             freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
             wd (float, optional): Optional weight decay (L2 regularization) parameter.
@@ -189,6 +189,32 @@ class VI_NN(QUiNNBase):
 
         return y
 
+    def forward_w_prior(self, x, nens=3):
+        x_t = tch(x)
+        nsamples, _ = x_t.shape
+
+        par_samples = []
+        for j in range(nens):
+          temp =[]
+          for par in self.bmodel.param_priors:
+              temp.append(par.sample())
+          par_samples.append(temp)
+
+        shapes = []
+        for name, param in self.nnmodel.named_parameters():
+          shapes += [param.shape]
+
+        yprior = torch.empty((nens, nsamples, _))
+
+        for iens in range(nens):
+          t = []
+          for i, par in enumerate(par_samples[iens]):
+              t.append(par*torch.ones(shapes[i]))
+          yprior[iens,:] = self.nnmodel.forward_w_params(x_t,t)
+
+        return npy(yprior)
+
+
 ######################################################################
 ######################################################################
 ######################################################################
@@ -226,7 +252,7 @@ class BNet(torch.nn.Module):
         assert(isinstance(nnmodel, torch.nn.Module))
 
         self.nnmodel = copy.deepcopy(nnmodel)
-        
+
         try:
             self.device = nnmodel.device
         except AttributeError:
@@ -261,8 +287,8 @@ class BNet(torch.nn.Module):
                 else:
                     self.params.append(mu)
                     self.params.append(rho)
-                self.rparams.append(Gaussian(mu, logsigma=rho))
-                
+                self.rparams.append(Gaussian(mu, rho=rho))
+
                 ## PRIOR
                 self.param_priors.append(GMM2(pi, sigma1, sigma2))
                 self.param_names.append(name)
@@ -362,6 +388,8 @@ class BNet(torch.nn.Module):
         return self.nnmodel(x)
 
 
+
+
     def sample_elbo(self, x, target, nsam, likparams=None):
         """Sample from ELBO.
 
@@ -378,7 +406,7 @@ class BNet(torch.nn.Module):
         batch_size = shape_x[0]
         batch_size_, outdim = target.shape
         assert(batch_size == batch_size_)
-        # FIXME: 
+        # FIXME:
         device = x.device
         outputs = torch.zeros(nsam, batch_size, outdim, device=device)
         log_priors = torch.zeros(nsam, device=device)
@@ -414,5 +442,3 @@ class BNet(torch.nn.Module):
         log_prior, log_variational_posterior, negative_log_likelihood = self.sample_elbo(data, target, nsam, likparams=[datanoise])
 
         return (log_variational_posterior - log_prior)/num_batches + negative_log_likelihood
-
-

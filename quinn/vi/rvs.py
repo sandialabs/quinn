@@ -148,3 +148,13 @@ class GMM2(RV):
         logprob = (torch.log(self.pi * prob1 + (1-self.pi) * prob2)).sum()
 
         return logprob
+
+    def sample(self):
+        r"""Sampling function.
+
+        Returns:
+            torch.Tensor: A torch tensor of the same shape as :math:`\mu` and :math:`\rho` (or `\log{\sigma}`).
+        """
+        prob1 = self.normal1.sample()
+        prob2 = self.normal2.sample()
+        return self.pi * prob1 + (1-self.pi) * prob2   

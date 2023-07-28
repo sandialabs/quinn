@@ -34,8 +34,8 @@ class Sine(torch.nn.Module):
             T (float, optional): Period `T`. Defaults to 1.
         """
         super().__init__()
-        self.A = A
-        self.T = T
+        self.A =  torch.nn.Parameter(torch.randn(()))
+        self.C =  torch.nn.Parameter(torch.randn(()))
 
     def forward(self, x):
         """Forward function.
@@ -47,7 +47,7 @@ class Sine(torch.nn.Module):
             torch.Tensor: Output tensor of same size as input `x`.
         """
 
-        return torch.sin(self.A*torch.Tensor(math.pi)*x/self.T)
+        return self.C*torch.sin(self.A*math.pi*x)
 
 
 class Polynomial(torch.nn.Module):
