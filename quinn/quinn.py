@@ -11,6 +11,7 @@ from .utils.maps import scale01ToDom
 from .utils.stats import get_stats, get_domain
 from .nns.tchutils import print_nnparams
 
+from .nns.tchutils import npy, tch
 
 class QUiNNBase():
     """Base QUiNN class.

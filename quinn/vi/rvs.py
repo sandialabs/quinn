@@ -132,6 +132,7 @@ class GMM2(RV):
         self.sigma2 = sigma2
         self.normal1 = torch.distributions.Normal(0,sigma1)
         self.normal2 = torch.distributions.Normal(0,sigma2)
+        self.selector = torch.distributions.Uniform(0,1)
 
     def log_prob(self, x):
         """Evaluate the natural logarithm of the probability density function.
@@ -155,6 +156,9 @@ class GMM2(RV):
         Returns:
             torch.Tensor: A torch tensor of the same shape as :math:`\mu` and :math:`\rho` (or `\log{\sigma}`).
         """
-        prob1 = self.normal1.sample()
-        prob2 = self.normal2.sample()
-        return self.pi * prob1 + (1-self.pi) * prob2   
+        select = self.selector.sample()
+        if select <= self.pi:
+            return  self.normal1.sample()
+        else :
+            return self.normal2.sample()
+            
