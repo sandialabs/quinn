@@ -65,9 +65,12 @@ def cartes_list(somelists):
         [('a', 3), ('a', 4), ('a', 2), ('b', 3), ('b', 4), ('b', 2)]
 
     """
-    final_list = []
-    for element in itertools.product(*somelists):
-        final_list.append(element)
+
+    # final_list = []
+    # for element in itertools.product(*somelists):
+    #     final_list.append(element)
+
+    final_list = list(itertools.product(*somelists))
 
     return final_list
 

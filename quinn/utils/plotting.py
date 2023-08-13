@@ -1613,3 +1613,27 @@ def plot_2d(func, domain, ax=None, idim=0, jdim=1, odim=0, nom=None, ngr=33, fig
     plt.savefig(figname)
 
     return
+
+########################################################################
+
+def plot_parity(y1, y2, labels=['y1', 'y2'], filename='parity.png'):
+    """A minimal parity plot.
+
+    Args:
+        y1 (np.ndarray): The 1d array on the x-axis.
+        y2 (np.ndarray): The 1d array on the y-axis.
+        labels (list, optional): List of length two for the axes labels.
+        filename (str, optional): Figure filename to save.
+    """
+    plt.figure(figsize=(6,6))
+    plt.plot(y1, y2,'o')
+    llim=min(y1.min(), y2.min())
+    ulim=max(y1.max(), y2.max())
+    delt = ulim - llim
+    plt.xlim((llim-0.1*delt, ulim+0.1*delt))
+    plt.ylim((llim-0.1*delt, ulim+0.1*delt))
+    plt.plot([llim, ulim], [llim, ulim])
+    plt.xlabel(labels[0])
+    plt.ylabel(labels[1])
+    plt.savefig(filename)
+
