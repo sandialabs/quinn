@@ -304,9 +304,15 @@ def plot_yx(x, y, rowcols=None, ylabel='', xlabels=None,
 
     fig, axes = plt.subplots(rows, cols, figsize=(8*cols,(3+ypad)*rows),
                              gridspec_kw={'hspace': ypad, 'wspace': xpad})
-    axes=axes.reshape(rows, cols)
 
-    axes = axes.T
+    if rows * cols > 1:
+        axes=axes.reshape(rows, cols)
+        axes = axes.T
+    else:
+        axes = np.array([[axes]])
+
+    if xlabels is None:
+        xlabels = ['' for i in range(ndim)]
     #print(axes.shape)
     for i in range(ndim):
         ih = i % cols
