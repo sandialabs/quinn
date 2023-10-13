@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import torch
+torch.set_default_dtype(torch.double)
 
 from .tchutils import npy, tch, nnfit
 
