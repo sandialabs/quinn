@@ -13,16 +13,19 @@ from ..nns.nnwrap import nn_p, NNWrap
 
 class MCMC_NN(QUiNNBase):
     """MCMC NN wrapper class.
-
+    ----------
     Attributes:
-        lpinfo (dict): Dictionary that holds likelihood computation necessary information.
-        pdim (int): Dimensonality `d` of chain.
-        verbose (bool): Whether to be verbose or not.
-        samples (np.ndarray): MCMC samples of all parameters, size `(M,d)`.
-        cmode (np.ndarray): MAP values of all parameters, size `M`.
+        - lpinfo (dict): Dictionary that holds likelihood computation necessary information.
+        - pdim (int): Dimensonality `d` of chain.
+        - verbose (bool): Whether to be verbose or not.
+        - samples (np.ndarray): MCMC samples of all parameters, size `(M,d)`.
+        - cmode (np.ndarray): MAP values of all parameters, size `M`.
+        - sampler: sampling algorithm.
+        - log_post: log posterior
+        - nnmodel: NN model defined as an NNWrapp class instance.
     """
 
-    def __init__(self, nnmodel, verbose=True):
+    def __init__(self, nnmodel, verbose=True, sampler=None, log_post=None):
         """Initialization.
 
         Args:
@@ -40,34 +43,66 @@ class MCMC_NN(QUiNNBase):
         self.samples = None
         self.cmode = None
 
+        self.nnmodel = nnmodel
+        self.sampler = sampler
+        self.log_posterior = log_post
+
     def logpost(self, modelpars):
         """Function that computes log-posterior given model parameters.
-
+        This method allows to compute the posterior for gaussian likelihood
+        and prior if no log_Posterior method is provided when creating the
+        MCMC_NN instance.
+        ----------
         Args:
             modelpars (np.ndarray): Log-posterior input parameters.
-
+        ----------
         Returns:
             float: log-posterior value.
         """
-        # Model prediction
-        ypred = self.lpinfo['model'](modelpars, self.lpinfo['xd'], self.lpinfo['otherpars'])
-        # Data
-        ydata = self.lpinfo['yd']
-        nd = len(ydata)
-        if self.lpinfo['ltype'] == 'classical':
-            lpostm = 0.0
-            for i in range(nd):
-                for yy in ydata[i]:
-                    lpostm -= 0.5 * np.sum((ypred[i]-yy)**2)/self.lpinfo['lparams']['sigma']**2
-                    lpostm -= 0.5 * np.log(2 * np.pi)
-                    lpostm -= np.log(self.lpinfo['lparams']['sigma'])
+        if self.log_posterior is None:
+            # Model prediction
+            ypred = self.lpinfo["model"](
+                modelpars, self.lpinfo["xd"], self.lpinfo["otherpars"]
+            )
+            # Data
+            ydata = self.lpinfo["yd"]
+            nd = len(ydata)
+            if self.lpinfo["ltype"] == "classical":
+                lpostm = 0.0
+                for i in range(nd):
+                    for yy in ydata[i]:
+                        lpostm -= (
+                            0.5
+                            * np.sum((ypred[i] - yy) ** 2)
+                            / self.lpinfo["lparams"]["sigma"] ** 2
+                        )
+                        lpostm -= 0.5 * np.log(2 * np.pi)
+                        lpostm -= np.log(self.lpinfo["lparams"]["sigma"])
+            else:
+                print("Likelihood type is not recognized. Exiting")
+                sys.exit()
+
+            return lpostm
         else:
-            print('Likelihood type is not recognized. Exiting')
-            sys.exit()
+            self.nnmodel.p_unflatten(modelpars)
 
-        return lpostm
+            return self.log_posterior(
+                self.nnmodel, self.lpinfo["xd"], self.lpinfo["yd"], requires_grad=False
+            )
 
-    def fit(self, xtrn, ytrn, zflag=True, datanoise=0.05, nmcmc=6000, gamma=0.1, param_ini=None, cov_ini=None, t0=100, tadapt=1000):
+    def fit(
+        self,
+        xtrn,
+        ytrn,
+        zflag=True,
+        datanoise=0.05,
+        nmcmc=6000,
+        gamma=0.1,
+        param_ini=None,
+        cov_ini=None,
+        t0=100,
+        tadapt=1000,
+    ):
         r"""Fit function that perfoms MCMC on NN parameters.
 
         Args:
@@ -87,27 +122,41 @@ class MCMC_NN(QUiNNBase):
         ntrn_, outdim = ytrn.shape
 
         # Set dictionary info for posterior computation
-        self.lpinfo = {'model': nn_p,
-                  'xd': xtrn, 'otherpars': self.nnmodel, 'yd': [y for y in ytrn],
-                  'ltype': 'classical',
-                  'lparams': {'sigma': datanoise}}
+        self.lpinfo = {
+            "model": nn_p,
+            "xd": xtrn,
+            "otherpars": self.nnmodel,
+            "yd": [y for y in ytrn],
+            "ltype": "classical",
+            "lparams": {"sigma": datanoise},
+        }
 
         if param_ini is None:
             param_ini = np.random.rand(self.pdim)  # initial parameter values
             if zflag:
-                res = minimize((lambda x, fcn: -fcn(x)), param_ini, args=(self.logpost,), method='BFGS',options={'gtol': 1e-13})
+                res = minimize(
+                    (lambda x, fcn: -fcn(x)),
+                    param_ini,
+                    args=(self.logpost,),
+                    method="BFGS",
+                    options={"gtol": 1e-13},
+                )
                 param_ini = res.x
         if cov_ini is None:
-            cov_ini = np.diag(0.01*np.abs(param_ini+1.e-3)) # initial covariance
-
+            cov_ini = np.diag(0.01 * np.abs(param_ini + 1.0e-3))  # initial covariance
 
         my_amcmc = AMCMC()
-        my_amcmc.setParams(param_ini, cov_ini,
-                           t0=t0, tadapt=tadapt, gamma=gamma, nmcmc=nmcmc)
+        my_amcmc.setParams(
+            param_ini, cov_ini, t0=t0, tadapt=tadapt, gamma=gamma, nmcmc=nmcmc
+        )
 
         mcmc_results = my_amcmc.run(self.logpost)
-        self.samples, self.cmode, pmode, acc_rate = mcmc_results['chain'], mcmc_results['mapparams'], mcmc_results['maxpost'], mcmc_results['accrate']
-
+        self.samples, self.cmode, pmode, acc_rate = (
+            mcmc_results["chain"],
+            mcmc_results["mapparams"],
+            mcmc_results["maxpost"],
+            mcmc_results["accrate"],
+        )
 
     def get_best_model(self, param):
         """Creates a PyTorch NN module with parameters set to a given flattened parameter array.
@@ -122,7 +171,6 @@ class MCMC_NN(QUiNNBase):
         nnw.p_unflatten(param)
 
         return copy.deepcopy(nnw.nnmodel)
-
 
     def predict_MAP(self, x):
         """Predict with the max a posteriori (MAP) parameter setting.
@@ -161,11 +209,10 @@ class MCMC_NN(QUiNNBase):
         Note:
             This overloads QUiNN's base predict_ens functions
         """
-        nevery = int((self.samples.shape[0]-nburn)/nens)
+        nevery = int((self.samples.shape[0] - nburn) / nens)
         for j in range(nens):
-            yy = self.predict_sample(x, self.samples[nburn+j*nevery,:])
+            yy = self.predict_sample(x, self.samples[nburn + j * nevery, :])
             if j == 0:
                 y = np.empty((nens, yy.shape[0], yy.shape[1]))
             y[j, :, :] = yy
         return y
-
