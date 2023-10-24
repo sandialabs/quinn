@@ -96,12 +96,7 @@ class MCMC_NN(QUiNNBase):
         ytrn,
         zflag=True,
         datanoise=0.05,
-        nmcmc=6000,
-        gamma=0.1,
         param_ini=None,
-        cov_ini=None,
-        t0=100,
-        tadapt=1000,
     ):
         r"""Fit function that perfoms MCMC on NN parameters.
 
@@ -111,15 +106,13 @@ class MCMC_NN(QUiNNBase):
             zflag (bool, optional): Whether to precede MCMC with a LBFGS optimization. Default is True.
             datanoise (float, optional): Datanoise size. Defaults to 0.05.
             nmcmc (int, optional): Number of MCMC steps, `M`.
-            gamma (float, optional): Proposal jump size factor :math:`\gamma`. Defaults to 0.1.
             param_ini (None, optional): Initial parameter array of size `p`. Default samples randomly.
+        Args (the following args to be included in the AMCMC class which should be given as an input when creating the class instance):
+            gamma (float, optional): Proposal jump size factor :math:`\gamma`. Defaults to 0.1.
             cov_ini (None, optional): Initial covariance array of size `(p,p)`. Default generates initial diagonal covariance that is a 0.01 factor of initial parameters (with a cushion to avoid zero variance).
             t0 (int, optional): Step where adaptivity begins. Defaults to 100.
             tadapt (int, optional): Adapt/update covariance every `tadapt` steps. Defaults to 1000.
         """
-        shape_xtrn = xtrn.shape
-        ntrn = shape_xtrn[0]
-        ntrn_, outdim = ytrn.shape
 
         # Set dictionary info for posterior computation
         self.lpinfo = {
@@ -142,15 +135,8 @@ class MCMC_NN(QUiNNBase):
                     options={"gtol": 1e-13},
                 )
                 param_ini = res.x
-        if cov_ini is None:
-            cov_ini = np.diag(0.01 * np.abs(param_ini + 1.0e-3))  # initial covariance
 
-        my_amcmc = AMCMC()
-        my_amcmc.setParams(
-            param_ini, cov_ini, t0=t0, tadapt=tadapt, gamma=gamma, nmcmc=nmcmc
-        )
-
-        mcmc_results = my_amcmc.run(self.logpost)
+        mcmc_results = self.sampler.run(param_ini, xtrn, ytrn, self.nnmodel)
         self.samples, self.cmode, pmode, acc_rate = (
             mcmc_results["chain"],
             mcmc_results["mapparams"],

@@ -3,6 +3,7 @@
 
 import numpy as np
 
+
 def blundell(xx, datanoise=0.0):
     r"""Classical example from :cite:t:`blundell:2015`.
 
@@ -19,8 +20,14 @@ def blundell(xx, datanoise=0.0):
         This function is typically used in `d=1` setting.
     """
     noise = datanoise * np.random.randn(xx.shape[0], xx.shape[1])
-    yy = xx + 0.3 * np.sin(2.*np.pi*(xx+noise))+0.3 * np.sin(4.*np.pi*(xx+noise))+noise
+    yy = (
+        xx
+        + 0.3 * np.sin(2.0 * np.pi * (xx + noise))
+        + 0.3 * np.sin(4.0 * np.pi * (xx + noise))
+        + noise
+    )
     return yy
+
 
 def Sine(xx, datanoise=0.0):
     r"""Simple sum of sines function
@@ -62,6 +69,7 @@ def Sine10(xx, datanoise=0.02):
 
     return yy
 
+
 def Ackley(x, datanoise=0.02):
     r"""Ackley4 or Modified Ackley function from https://arxiv.org/pdf/1308.4008v1.pdf.
 
@@ -75,9 +83,13 @@ def Ackley(x, datanoise=0.02):
     Returns:
         np.ndarray: Output array of size `(N,1)`.
     """
-    yy = datanoise * np.random.randn(x.shape[0],)
+    yy = datanoise * np.random.randn(
+        x.shape[0],
+    )
     ndim = x.shape[1]
 
-    for i in range(ndim-1):
-        yy += np.exp(-0.2)*np.sqrt(x[:,i]**2 + x[:,i+1]**2) + 3 *(np.cos(2*x[:,i])+np.sin(2*x[:,i+1]))
+    for i in range(ndim - 1):
+        yy += np.exp(-0.2) * np.sqrt(x[:, i] ** 2 + x[:, i + 1] ** 2) + 3 * (
+            np.cos(2 * x[:, i]) + np.sin(2 * x[:, i + 1])
+        )
     return yy.reshape(-1, 1)
