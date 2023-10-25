@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-from tchutils import tch, npy
+from quinn.nns.tchutils import tch, npy
 
 
 class Gaussian_likelihood_assumed_var(torch.nn.Module):
@@ -38,7 +38,7 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
             - Loss tensor. Type: torch.Tensor.
         """
         if requires_grad:
-            predictions = model(input, type_="torch")
+            predictions = model(input)  # , type_="torch")
 
             part1 = (
                 0.5 * torch.sum(torch.pow(target - predictions, 2)) / self.sigma**2
@@ -51,7 +51,7 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
             return -part1 - part2
         else:
             with torch.no_grad():
-                predictions = model(input, type_="torch")
+                predictions = model(input)  # , type_="torch")
 
                 part1 = (
                     0.5

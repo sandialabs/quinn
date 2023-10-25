@@ -5,20 +5,20 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mcmc import MCMC_NN
-from hmc import HMC_NN
-from nnwrap import NNWrap
-from func_modules import (
+from quinn.mcmc.mcmc import MCMC_NN
+from quinn.mcmc.hmc import HMC_NN
+from quinn.nns.nnwrap import NNWrap_MCMC
+from quinn.mcmc.posterior_funcs import (
     Gaussian_likelihood_assumed_var,
     Gaussian_prior,
     Log_Posterior,
     U_HMC,
 )
 
-from funcs import Sine
+from quinn.func.funcs import Sine
 
-from plotting import myrc, plot_xrv, plot_yx, plot_tri, plot_pdfs
-from maps import scale01ToDom
+from quinn.utils.plotting import myrc, plot_xrv, plot_yx, plot_tri, plot_pdfs
+from quinn.utils.maps import scale01ToDom
 
 
 def main():
@@ -66,11 +66,11 @@ def main():
     nnet = torch.nn.Linear(1, 1, bias=True)
     param_dim = sum(p.numel() for p in nnet.parameters())
     # The model is defined in a wrapper class.
-    NNmodel = NNWrap(nnet)
+    NNmodel = NNWrap_MCMC(nnet)
 
     # Define likelihood and prior modules
 
-    likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise, n_params=param_dim)
+    likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
     prior = Gaussian_prior(sigma=10, n_params=param_dim)
     log_posterior = Log_Posterior(likelihood, prior)
     u_hmc = U_HMC(likelihood, prior)
@@ -78,7 +78,8 @@ def main():
     # Define HMC sampler
 
     sampling_params = {"epsilon": 0.05, "L_steps": 3}
-    sampler_hmc = HMC_NN(u_hmc, sampling_params)
+    nmcmc = 3000
+    sampler_hmc = HMC_NN(u_hmc, sampling_params, nmcmc=nmcmc, nburning=0)
 
     # Data split to training and validation
     ntrn = int(trn_factor * nall)
@@ -88,9 +89,8 @@ def main():
     xtrn, xval = xall[indtrn, :], xall[indval, :]
     ytrn, yval = yall[indtrn, :], yall[indval, :]
 
-    nmcmc = 10000
-    uqnet = MCMC_NN(NNmodel, sampler_hmc, log_posterior, verbose=True)
-    uqnet.fit(xtrn, ytrn, zflag=True, datanoise=datanoise, nmcmc=nmcmc)
+    uqnet = MCMC_NN(NNmodel, verbose=True, sampler=sampler_hmc, log_post=log_posterior)
+    uqnet.fit(xtrn, ytrn, zflag=True, datanoise=datanoise)
 
     # Prepare lists of inputs and outputs for plotting
     xx_list = [xtrn, xval]

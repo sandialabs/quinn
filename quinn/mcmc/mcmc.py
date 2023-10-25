@@ -8,7 +8,7 @@ from scipy.optimize import minimize
 
 from .admcmc import AMCMC
 from ..quinn import QUiNNBase
-from ..nns.nnwrap import nn_p, NNWrap
+from ..nns.nnwrap import nn_p, NNWrap, NNWrap_MCMC
 
 
 class MCMC_NN(QUiNNBase):
@@ -29,16 +29,11 @@ class MCMC_NN(QUiNNBase):
         """Initialization.
 
         Args:
-            nnmodel (torch.nn.Module): PyTorch NN model.
+            nnmodel (torch.nn.Module): NNWrap_MCMC class instance with PyTorch NN model.
             verbose (bool, optional): Verbose or not.
         """
         super().__init__(nnmodel)
         self.verbose = verbose
-        self.pdim = sum(p.numel() for p in self.nnmodel.parameters())
-        print("Number of parameters:", self.pdim)
-
-        if self.verbose:
-            self.print_params(names_only=True)
 
         self.samples = None
         self.cmode = None
@@ -46,6 +41,12 @@ class MCMC_NN(QUiNNBase):
         self.nnmodel = nnmodel
         self.sampler = sampler
         self.log_posterior = log_post
+
+        self.pdim = sum(p.numel() for p in self.nnmodel.parameters())
+        print("Number of parameters:", self.pdim)
+
+        if self.verbose:
+            self.print_params(names_only=True)
 
     def logpost(self, modelpars):
         """Function that computes log-posterior given model parameters.
@@ -153,10 +154,9 @@ class MCMC_NN(QUiNNBase):
         Returns:
             torch.nn.Module: PyTorch NN module with the given parameters.
         """
-        nnw = NNWrap(self.nnmodel)
-        nnw.p_unflatten(param)
+        self.nnmodel.p_unflatten(param)
 
-        return copy.deepcopy(nnw.nnmodel)
+        return copy.deepcopy(self.nnmodel.nnmodel)
 
     def predict_MAP(self, x):
         """Predict with the max a posteriori (MAP) parameter setting.
@@ -167,7 +167,7 @@ class MCMC_NN(QUiNNBase):
         Returns:
             np.ndarray: Outpur array of size `(N,o)`.
         """
-        return nn_p(self.cmode, x, self.nnmodel)
+        return self.nnmodel.predict(x, self.cmode)
 
     def predict_sample(self, x, param):
         """Predict with a given parameter array.
@@ -179,7 +179,7 @@ class MCMC_NN(QUiNNBase):
         Returns:
             np.ndarray: Outpur array of size `(N,o)`.
         """
-        return nn_p(param, x, self.nnmodel)
+        return self.nnmodel.predict(x, param)
 
     def predict_ens(self, x, nens=10, nburn=1000):
         """Summary

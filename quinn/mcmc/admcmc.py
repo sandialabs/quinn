@@ -61,6 +61,10 @@ class AMCMC:
             'mapparams' (MAP parameters array), 'maxpost' (maximal log-post value),
             'accrate' (acceptance rate)
         """
+        if self.cov_ini is None:
+            self.cov_ini = np.diag(
+                0.01 * np.abs(param_ini + 1.0e-3)
+            )  # initial covariance
         cdim = param_ini.shape[0]  # chain dimensionality
         cov = np.zeros((cdim, cdim))  # covariance matrix
         samples = np.zeros((self.nmcmc, cdim))  # MCMC samples
