@@ -117,7 +117,11 @@ class NNWrap:
 
 
 class NNWrap_MCMC(torch.nn.Module):
-    """Wrapper class to any PyTorch NN module.
+    """Wrapper class to any PyTorch NN module. This class inherits the properties of
+    torch.nn.Module to facilitate some of the tasks. This is initially though to be used
+    in MCMC sampling problems. It adds two additional methods to the previous class
+    to calculate a loss and the gradients of the loss with respect to the model parameters
+    (given the model parameters, loss function (nn.Module) and data points).
 
     Attributes:
         - nnmodel: The original PyTorch NN module. Type: torch.nn.Module.
