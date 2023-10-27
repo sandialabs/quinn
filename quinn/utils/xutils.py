@@ -147,6 +147,8 @@ def get_opt_bw(xsam, bwf=1.0):
 
     #xmin, xmax = np.min(xsam, axis=0), np.max(xsam, axis=0)
 
+    # in case standard deviation is 0
+    bw[bw<1.e-16] = 0.01
     return bw
 
 ####################################################################

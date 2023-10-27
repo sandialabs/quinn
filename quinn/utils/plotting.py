@@ -680,7 +680,7 @@ def plot_pdf1d(sams, pltype='hist', color='b',
         pgrid = np.linspace(pnom - a * pdel, pnom + a * pdel, ngrid)
         if (np.var(sams, axis=0)>0.0):
             pdf = get_pdf(sams, pgrid)
-            ax.plot(pgrid, pdf, color, linewidth=lw, label=label)
+            ax.plot(pgrid, pdf, color=color, linewidth=lw, label=label)
         else:
             y1, y2 = ax.get_ylim()
             ax.plot([sams[0], sams[0]], [0, y2], color, linewidth=lw, label=label)
