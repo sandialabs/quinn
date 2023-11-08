@@ -157,11 +157,10 @@ def genz_funcs(x, a=None, u=None, func_type="continuous", datanoise=0.02):
     if u is None:
         if func_type == "oscillatory":
             u = np.random.rand()
-            u = np.reshape(np.repeat(u, ndim * len(x)), newshape=(len(x), ndim))
+            u = np.repeat(u, len(x))
         else:
             u = np.random.rand(ndim)
             u = np.repeat(np.reshape(u, newshape=(1, ndim)), len(x), axis=0)
-
     if func_type == "continuous":
         y = np.squeeze(np.exp(-np.sum(np.multiply(np.abs(x - u), a), axis=1)))
         yy = yy + y
@@ -177,10 +176,10 @@ def genz_funcs(x, a=None, u=None, func_type="continuous", datanoise=0.02):
             np.exp(-np.sum(np.multiply(np.power(x - u, 2), np.power(a, 2)), axis=1))
         )
         yy = yy + y
-    elif func_type == "oscillator":
+    elif func_type == "oscillatory":
         y = np.squeeze(np.cos(2 * np.pi * u + np.sum(np.multiply(x, a), axis=1)))
         yy = yy + y
-    elif func_type == "oscillator":
+    elif func_type == "product":
         y = np.squeeze(
             np.prod(np.power(np.power(a, -2) + np.power(x - u, 2), -1), axis=1)
         )

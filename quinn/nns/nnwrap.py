@@ -155,7 +155,7 @@ class NNWrap_MCMC(torch.nn.Module):
             torch tensor.
         ----------
         Returns:
-            - np.ndarray: A numpy output array of size `(N,o)`.
+            - torch.Tensor: `(N,o)`.
         """
         try:
             device = self.nnmodel.device
@@ -163,6 +163,24 @@ class NNWrap_MCMC(torch.nn.Module):
             device = "cpu"
 
         return self.nnmodel(tch(x, device=device))
+
+    def forward(self, x):
+        """Calling the wrapper function.
+        ----------
+        Args:
+            - x (np.ndarray): A numpy input array of size `(N,d)`.
+            - type: indicates whether the output should be a numpy array or sa
+            torch tensor.
+        ----------
+        Returns:
+            - np.ndarray: A numpy output array of size `(N,o)`.
+        """
+        try:
+            device = self.nnmodel.device
+        except AttributeError:
+            device = "cpu"
+
+        return npy(self.nnmodel(tch(x, device=device)))
 
     def p_flatten(self):
         """Flattens all parameters into an array.

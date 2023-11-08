@@ -45,6 +45,7 @@ class HMC_NN:
 
         # store output
         self.pos_theta = []
+        self.pos_U = []
 
     def calc_K(self, p):
         """
@@ -94,14 +95,19 @@ class HMC_NN:
         map_theta = 0
         max_post = 0
 
+        self.pos_theta.append(theta)
+
         for ii in range(self.nmcmc):
             p = np.random.randn(theta_size)
 
-            if ii % 1000 == 0 and ii != 0:
+            if ii % (self.nmcmc // 10) == 0 and ii != 0:
                 print(f"Iteration {ii}: acceptance rate = ", n_accept / ii)
 
             current_U = model.calc_loss(theta, self.U_func, x_data, y_data)
             current_K = self.calc_K(p)
+
+            if ii == 0:
+                self.pos_U.append(current_U)
 
             theta_proposal = theta
 
@@ -157,14 +163,15 @@ class HMC_NN:
             if u < mh_prob:
                 n_accept += 1
                 theta = theta_proposal
-                if ii > self.nburning:
-                    self.pos_theta.append(theta_proposal)
-
+                self.pos_U.append(proposed_U)
                 if max_post < -proposed_U:
                     max_post = -proposed_U
                     map_theta = theta_proposal
+            else:
+                self.pos_U.append(current_U)
 
-            self.pos_theta.append(theta)
+            if ii + 1 > self.nburning:
+                self.pos_theta.append(theta)
 
         # Calculate accept rate
         accept_rate = (n_accept / self.nmcmc) * 100
@@ -173,6 +180,7 @@ class HMC_NN:
 
         results = {
             "chain": np.array(self.pos_theta),
+            "logpost": np.array(self.pos_U),
             "mapparams": map_theta,
             "maxpost": max_post,
             "accrate": accept_rate,

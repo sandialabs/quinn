@@ -37,6 +37,7 @@ class MCMC_NN(QUiNNBase):
 
         self.samples = None
         self.cmode = None
+        self.chain_post = None
 
         self.nnmodel = nnmodel
         self.sampler = sampler
@@ -138,8 +139,9 @@ class MCMC_NN(QUiNNBase):
                 param_ini = res.x
 
         mcmc_results = self.sampler.run(param_ini, xtrn, ytrn, self.nnmodel)
-        self.samples, self.cmode, pmode, acc_rate = (
+        self.samples, self.chain_post, self.cmode, pmode, acc_rate = (
             mcmc_results["chain"],
+            mcmc_results["logpost"],
             mcmc_results["mapparams"],
             mcmc_results["maxpost"],
             mcmc_results["accrate"],
