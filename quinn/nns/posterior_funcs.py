@@ -173,7 +173,7 @@ class Log_Posterior(torch.nn.Module):
         return likelihood + prior
 
 
-class U_HMC(torch.nn.Module):
+class NegLogPosterior(torch.nn.Module):
     """Used to calculate the U (potential energy) component of the hamiltonian.
     ----------
     Attributes:

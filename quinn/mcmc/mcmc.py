@@ -6,9 +6,8 @@ import copy
 import numpy as np
 from scipy.optimize import minimize
 
-from .admcmc import AMCMC
 from ..quinn import QUiNNBase
-from ..nns.nnwrap import nn_p, NNWrap, NNWrap_MCMC
+from ..nns.nnwrap import nn_p
 
 
 class MCMC_NN(QUiNNBase):
@@ -29,7 +28,7 @@ class MCMC_NN(QUiNNBase):
         """Initialization.
 
         Args:
-            nnmodel (torch.nn.Module): NNWrap_MCMC class instance with PyTorch NN model.
+            nnmodel (torch.nn.Module): NNWrap_Torch class instance with PyTorch NN model.
             verbose (bool, optional): Verbose or not.
         """
         super().__init__(nnmodel)

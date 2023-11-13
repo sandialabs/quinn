@@ -6,7 +6,8 @@ import copy
 
 from ..nns.tchutils import npy, tch, nnfit, print_nnparams
 
-class Learner():
+
+class Learner:
     """A learner class that holds PyTorch NN module and helps train it.
 
     Attributes:
@@ -44,13 +45,12 @@ class Learner():
             print_nnparams(self.nnmodel, names_only=names_only)
 
     def init_params(self):
-        """An example of random initialization of parameters.
-        """
+        """An example of random initialization of parameters."""
         for p in self.nnmodel.parameters():
             try:
-                stdv = 1. / math.sqrt(p.size(1))
+                stdv = 1.0 / math.sqrt(p.size(1))
             except IndexError:
-                stdv = 1.
+                stdv = 1.0
             p.data.uniform_(-stdv, stdv)
 
     def fit(self, xtrn, ytrn, **kwargs):
@@ -61,11 +61,11 @@ class Learner():
             ytrn (np.ndarray): Output array of size `(N,o)`.
             **kwargs (dict): Keyword arguments.
         """
-        if hasattr(self.nnmodel, 'fit') and callable(getattr(self.nnmodel, 'fit')):
+        if hasattr(self.nnmodel, "fit") and callable(getattr(self.nnmodel, "fit")):
             self.best_model = self.nnmodel.fit(xtrn, ytrn, **kwargs)
         else:
             fit_info = nnfit(self.nnmodel, xtrn, ytrn, **kwargs)
-            self.best_model = fit_info['best_nnmodel']
+            self.best_model = fit_info["best_nnmodel"]
         self.trained = True
 
     def predict(self, x):
@@ -77,11 +77,11 @@ class Learner():
         Returns:
             np.ndarray: Output array of size `(N,o)`.
         """
-        assert(self.trained)
+        assert self.trained
         try:
             device = self.best_model.device
         except AttributeError:
-            device = 'cpu'
+            device = "cpu"
 
         y = self.best_model(tch(x, rgrad=False, device=device))
         return npy(y)

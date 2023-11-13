@@ -8,12 +8,12 @@ from quinn.mcmc.mcmc import MCMC_NN
 from quinn.mcmc.admcmc import AMCMC
 from quinn.vi.vi import VI_NN
 from quinn.ens.ens import Ens_NN
-from quinn.mcmc.posterior_funcs import (
+from quinn.nns.posterior_funcs import (
     Gaussian_likelihood_assumed_var,
     Gaussian_prior,
     Log_Posterior,
 )
-from quinn.nns.nnwrap import NNWrap_MCMC
+from quinn.nns.nnwrap import NNWrap_Torch
 
 from quinn.func.funcs import Ackley, Sine, Sine10, blundell
 from quinn.nns.nns import Polynomial
@@ -67,7 +67,7 @@ def main():
     # Neural net is a linear function
     nnet = torch.nn.Linear(1, 1, bias=True)
     param_dim = sum(p.numel() for p in nnet.parameters())
-    NNmodel = NNWrap_MCMC(nnet)
+    NNmodel = NNWrap_Torch(nnet)
     ## Polynomial example
     # nnet = Polynomial(4)
 

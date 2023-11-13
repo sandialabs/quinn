@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 
 torch.set_default_dtype(torch.double)
 
-def tch(arr, device='cpu', rgrad=True):
+
+def tch(arr, device="cpu", rgrad=True):
     """Convert a numpy array to torch Tensor.
 
     Args:
@@ -24,7 +25,7 @@ def tch(arr, device='cpu', rgrad=True):
 
 
 def npy(arr):
-    """Convert a torch tensor to numpy array. 
+    """Convert a torch tensor to numpy array.
 
     Args:
         arr (torch.Tensor): Torch tensor of any size.
@@ -35,20 +36,22 @@ def npy(arr):
     # return data.detach().numpy()
     return arr.cpu().data.numpy()
 
+
 def print_nnparams(nnmodel, names_only=False):
-        """Print parameter names of a PyTorch NN module and optionally, values.
+    """Print parameter names of a PyTorch NN module and optionally, values.
 
-        Args:
-            nnmodel (torch.nn.Module): The torch NN module.
-            names_only (bool, optional): Print names only. Default is False.
-        """
-        assert(isinstance(nnmodel, torch.nn.Module))
+    Args:
+        nnmodel (torch.nn.Module): The torch NN module.
+        names_only (bool, optional): Print names only. Default is False.
+    """
+    assert isinstance(nnmodel, torch.nn.Module)
 
-        for name, param in nnmodel.named_parameters():
-            if names_only:
-                print(f"{name}, shape {npy(param.data).shape}")
-            else:
-                print(name, param.data)
+    for name, param in nnmodel.named_parameters():
+        if names_only:
+            print(f"{name}, shape {npy(param.data).shape}")
+        else:
+            print(name, param.data)
+
 
 def flatten_params(parameters):
     """Flattens all parameters into an array.
@@ -65,7 +68,7 @@ def flatten_params(parameters):
     s = 0
     for p in l:
         size = p.shape[0]
-        indices.append((s, s+size))
+        indices.append((s, s + size))
         s += size
     flat = torch.cat(l).view(-1, 1)
     return flat, indices
@@ -88,17 +91,28 @@ def recover_flattened(flat_params, indices, model):
     return l
 
 
-
-def nnfit(nnmodel, xtrn, ytrn, val=None,
-          loss_fn='mse', loss=None, loss_xy=None, wd=0.0,
-          optimizer='adam', lrate=0.1, lmbd=None,
-          nepochs=5000, batch_size=None,
-          gradcheck=False,
-          scheduler_lr=None,
-          cooldown=100,
-          factor=0.95,
-          freq_out=100, freq_plot=1000, lhist_suffix=''
-          ):
+def nnfit(
+    nnmodel,
+    xtrn,
+    ytrn,
+    val=None,
+    loss_fn="mse",
+    loss=None,
+    loss_xy=None,
+    wd=0.0,
+    optimizer="adam",
+    lrate=0.1,
+    lmbd=None,
+    nepochs=5000,
+    batch_size=None,
+    gradcheck=False,
+    scheduler_lr=None,
+    cooldown=100,
+    factor=0.95,
+    freq_out=100,
+    freq_plot=1000,
+    lhist_suffix="",
+):
     r"""Generic PyTorch NN fit function that is utilized in appropriate NN classes.
 
     Args:
@@ -116,7 +130,7 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
         nepochs (int, optional): Number of epochs.
         batch_size (int, optional): Batch size. Default is None, i.e. single batch.
         gradcheck (bool, optional): For code verification, whether we want to check the auto-computed gradients against numerically computed ones. Makes the code slow. Experimental - this is not tested enough.
-        scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch. 
+        scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch.
         freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
         freq_plot (int, optional): Frequency, in epochs, of plotting loss convergence graph. Defaults to 1000.
         lhist_suffix (str, optional): Optional uffix of loss history figure filename.
@@ -129,20 +143,26 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
 
     # Loss function
     if loss is None:
-        if loss_fn == 'mse':
-            loss = torch.nn.MSELoss(reduction='mean')
+        if loss_fn == "mse":
+            loss = torch.nn.MSELoss(reduction="mean")
         else:
             print(f"Loss function {loss_fn} is unknown. Exiting.")
             sys.exit()
 
+    if loss_fn == "logposterior":
+
+        def loss_xy(x, y):
+            return loss(nnmodel, x, y, requires_grad=True)
+
     if loss_xy is None:
+
         def loss_xy(x, y):
             return loss(nnmodel(x), y)
 
     # Optimizer selection
-    if optimizer == 'adam':
+    if optimizer == "adam":
         opt = torch.optim.Adam(nnmodel.parameters(), lr=lrate, weight_decay=wd)
-    elif optimizer == 'sgd':
+    elif optimizer == "sgd":
         opt = torch.optim.SGD(nnmodel.parameters(), lr=lrate, weight_decay=wd)
     else:
         print(f"Optimizer {optimizer} is unknown. Exiting.")
@@ -150,16 +170,20 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
 
     # Learning rate schedule
     if scheduler_lr == "ReduceLROnPlateau" and not lmbd is None:
-            print(f"Trying to use two schedulers. Exiting.")
-            sys.exit()    
+        print(f"Trying to use two schedulers. Exiting.")
+        sys.exit()
 
     if lmbd is None:
-        def lmbd(epoch): return 1.0
+
+        def lmbd(epoch):
+            return 1.0
+
     scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda=lmbd)
 
     if scheduler_lr == "ReduceLROnPlateau":
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', cooldown=cooldown, factor=factor, verbose=False)
-
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            opt, mode="min", cooldown=cooldown, factor=factor, verbose=False
+        )
 
     ntrn = xtrn.shape[0]
 
@@ -169,10 +193,10 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
     try:
         device = nnmodel.device
     except AttributeError:
-        device = 'cpu'
-    
-    xtrn_ = tch(xtrn , device=device)
-    ytrn_ = tch(ytrn , device=device)
+        device = "cpu"
+
+    xtrn_ = tch(xtrn, device=device)
+    ytrn_ = tch(ytrn, device=device)
 
     # Validation data
     if val is None:
@@ -180,16 +204,19 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
     else:
         xval, yval = val
 
-    xval_ = tch(xval , device=device)
-    yval_ = tch(yval , device=device)
-    
+    xval_ = tch(xval, device=device)
+    yval_ = tch(yval, device=device)
+
     # print("device: ", device)
     # print("xval_ is device: ", xval_.get_device(), xval_.device)
     # Training process
-    fit_info = {'best_fepoch': 0, 'best_epoch': 0,
-                'best_loss': 1.e+100, 'best_nnmodel': nnmodel,
-                'history': []}
-
+    fit_info = {
+        "best_fepoch": 0,
+        "best_epoch": 0,
+        "best_loss": 1.0e100,
+        "best_nnmodel": nnmodel,
+        "history": [],
+    }
 
     fepoch = 0
     for t in range(nepochs):
@@ -198,35 +225,38 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
         #     print(parameter)
         nsubepochs = len(range(0, ntrn, batch_size))
         for i in range(0, ntrn, batch_size):
-            indices = permutation[i:i + batch_size]
+            indices = permutation[i : i + batch_size]
 
             loss_trn = loss_xy(xtrn_[indices, :], ytrn_[indices, :])
-            #loss_val = loss_trn
+            # loss_val = loss_trn
             with torch.no_grad():
                 loss_val = loss_xy(xval_, yval_)
-            #loss_trn_full = loss_trn
+            # loss_trn_full = loss_trn
             if i == 0:  # otherwise too expensive
                 with torch.no_grad():
                     loss_trn_full = loss_xy(xtrn_, ytrn_)
 
-            fepoch += 1. / nsubepochs
+            fepoch += 1.0 / nsubepochs
 
-            curr_state = [fepoch + 0.0, loss_trn.item(), loss_trn_full.item(), loss_val.item()]
+            curr_state = [
+                fepoch + 0.0,
+                loss_trn.item(),
+                loss_trn_full.item(),
+                loss_val.item(),
+            ]
             crit = loss_val.item()
 
-            fit_info['history'].append(curr_state)
+            fit_info["history"].append(curr_state)
 
-            if crit < fit_info['best_loss']:
-                fit_info['best_loss'] = crit
-                fit_info['best_nnmodel'] = copy.copy(nnmodel)
+            if crit < fit_info["best_loss"]:
+                fit_info["best_loss"] = crit
+                fit_info["best_nnmodel"] = copy.copy(nnmodel)
 
-                fit_info['best_fepoch'] = fepoch
-                fit_info['best_epoch'] = t
-
+                fit_info["best_fepoch"] = fepoch
+                fit_info["best_epoch"] = t
 
             if gradcheck:
-                gc = torch.autograd.gradcheck(nnmodel, (xtrn_,),
-                                              eps=1e-2, atol=1e-2)
+                gc = torch.autograd.gradcheck(nnmodel, (xtrn_,), eps=1e-2, atol=1e-2)
 
             opt.zero_grad()
             loss_trn.backward()
@@ -240,44 +270,54 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
 
         ## Printout to screen
         if t == 0:
-            print('{:>10} {:>10} {:>12} {:>12} {:>12} {:>18} {:>10}'.\
-                  format("NEpochs", "NUpdates",
-                         "BatchLoss", "TrnLoss", "ValLoss",
-                         "BestLoss (Epoch)", "LrnRate"), flush=True)
+            print(
+                "{:>10} {:>10} {:>12} {:>12} {:>12} {:>18} {:>10}".format(
+                    "NEpochs",
+                    "NUpdates",
+                    "BatchLoss",
+                    "TrnLoss",
+                    "ValLoss",
+                    "BestLoss (Epoch)",
+                    "LrnRate",
+                ),
+                flush=True,
+            )
 
         if (t + 1) % freq_out == 0 or t == 0 or t == nepochs - 1:
-            tlr = opt.param_groups[0]['lr']
-            printout = f"{t+1:>10}" \
-                  f"{len(fit_info['history']):>10}" \
-                  f"{fit_info['history'][-1][1]:>14.6f}" \
-                  f"{fit_info['history'][-1][2]:>13.6f}" \
-                  f"{fit_info['history'][-1][3]:>13.6f}" \
-                  f"{fit_info['best_loss']:>14.6f} ({fit_info['best_epoch']})" \
-                  f"{tlr:>10}"
+            tlr = opt.param_groups[0]["lr"]
+            printout = (
+                f"{t+1:>10}"
+                f"{len(fit_info['history']):>10}"
+                f"{fit_info['history'][-1][1]:>14.6f}"
+                f"{fit_info['history'][-1][2]:>13.6f}"
+                f"{fit_info['history'][-1][3]:>13.6f}"
+                f"{fit_info['best_loss']:>14.6f} ({fit_info['best_epoch']})"
+                f"{tlr:>10}"
+            )
             print(printout, flush=True)
 
         ## Plotting
         if t % freq_plot == 0 or t == nepochs - 1:
-            fepochs = [state[0] for state in fit_info['history']]
-            losses_trn = [state[1] for state in fit_info['history']]
-            losses_trn_full = [state[2] for state in fit_info['history']]
-            losses_val = [state[3] for state in fit_info['history']]
+            fepochs = [state[0] for state in fit_info["history"]]
+            losses_trn = [state[1] for state in fit_info["history"]]
+            losses_trn_full = [state[2] for state in fit_info["history"]]
+            losses_val = [state[3] for state in fit_info["history"]]
 
             _ = plt.figure(figsize=(12, 8))
 
-            plt.plot(fepochs, losses_trn, label='Batch loss')
-            plt.plot(fepochs, losses_trn_full, label='Training loss')
-            plt.plot(fit_info['best_fepoch'], fit_info['best_loss'],
-                     'ro', markersize=11)
-            plt.vlines(fit_info['best_fepoch'], 0.0, 2.0,
-                       colors=None, linestyles='--')
-            plt.plot(fepochs, losses_val, label='Validation loss')
+            plt.plot(fepochs, losses_trn, label="Batch loss")
+            plt.plot(fepochs, losses_trn_full, label="Training loss")
+            plt.plot(
+                fit_info["best_fepoch"], fit_info["best_loss"], "ro", markersize=11
+            )
+            plt.vlines(fit_info["best_fepoch"], 0.0, 2.0, colors=None, linestyles="--")
+            plt.plot(fepochs, losses_val, label="Validation loss")
 
             plt.legend()
 
-            plt.savefig(f'loss_history{lhist_suffix}.png')
-            plt.yscale('log')
-            plt.savefig(f'loss_history{lhist_suffix}_log.png')
+            plt.savefig(f"loss_history{lhist_suffix}.png")
+            plt.yscale("log")
+            plt.savefig(f"loss_history{lhist_suffix}_log.png")
             plt.clf()
 
         # ## Stop if very accurate (did not work for variational inference losses, so comment out)

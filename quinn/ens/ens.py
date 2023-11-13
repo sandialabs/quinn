@@ -6,6 +6,7 @@ import numpy as np
 from .learner import Learner
 from ..quinn import QUiNNBase
 
+
 class Ens_NN(QUiNNBase):
     """Deep Ensemble NN Wrapper.
 
@@ -36,7 +37,6 @@ class Ens_NN(QUiNNBase):
         if self.verbose:
             self.print_params(names_only=True)
 
-
     def print_params(self, names_only=False):
         """Print model parameter names and optionally, values.
 
@@ -46,7 +46,6 @@ class Ens_NN(QUiNNBase):
         for i, learner in enumerate(self.learners):
             print(f"==========  Learner {i+1}/{self.nens}  ============")
             learner.print_params(names_only=names_only)
-
 
     def fit(self, xtrn, ytrn, **kwargs):
         """Fitting function for each ensemble member.
@@ -61,13 +60,12 @@ class Ens_NN(QUiNNBase):
 
             ntrn = ytrn.shape[0]
             permutation = np.random.permutation(ntrn)
-            ind_this = permutation[:int(ntrn*self.dfrac)]
+            ind_this = permutation[: int(ntrn * self.dfrac)]
 
             this_learner = self.learners[jens]
 
-            kwargs['lhist_suffix'] = f'_e{jens}'
+            kwargs["lhist_suffix"] = f"_e{jens}"
             this_learner.fit(xtrn[ind_this], ytrn[ind_this], **kwargs)
-
 
     def predict_sample(self, x):
         """Predict a single, randomly selected sample.
@@ -80,7 +78,6 @@ class Ens_NN(QUiNNBase):
         """
         jens = np.random.randint(0, self.nens)
         return self.learners[jens].predict(x)
-
 
     def predict_ens(self, x, nens=None):
         """Predict from all ensemble members.
@@ -96,11 +93,13 @@ class Ens_NN(QUiNNBase):
         """
         if nens is None:
             nens = self.nens
-        if nens>self.nens:
-            print(f"Warning: Requested {nens} but only {self.nens} ensemble members available.")
+        if nens > self.nens:
+            print(
+                f"Warning: Requested {nens} but only {self.nens} ensemble members available."
+            )
             nens = self.nens
 
-        permuted_inds=np.random.permutation(nens)
+        permuted_inds = np.random.permutation(nens)
 
         y_all = []
         for jens in range(nens):
@@ -108,4 +107,3 @@ class Ens_NN(QUiNNBase):
             y_all.append(y)
 
         return y_all
-

@@ -116,7 +116,7 @@ class NNWrap:
 ###############################################################
 
 
-class NNWrap_MCMC(torch.nn.Module):
+class NNWrap_Torch(torch.nn.Module):
     """Wrapper class to any PyTorch NN module. This class inherits the properties of
     torch.nn.Module to facilitate some of the tasks. This is initially though to be used
     in MCMC sampling problems. It adds two additional methods to the previous class
@@ -218,7 +218,6 @@ class NNWrap_MCMC(torch.nn.Module):
             device = self.nnmodel.device
         except AttributeError:
             device = "cpu"
-
         ll = [tch(flat_parameter[s:e], device=device) for (s, e) in self.indices]
         for i, p in enumerate(self.nnmodel.parameters()):
             if len(p.shape) > 0:

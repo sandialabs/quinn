@@ -7,12 +7,12 @@ import matplotlib.pyplot as plt
 
 from quinn.mcmc.mcmc import MCMC_NN
 from quinn.mcmc.hmc import HMC_NN
-from quinn.nns.nnwrap import NNWrap_MCMC
-from quinn.mcmc.posterior_funcs import (
+from quinn.nns.nnwrap import NNWrap_Torch
+from quinn.nns.posterior_funcs import (
     Gaussian_likelihood_assumed_var,
     Gaussian_prior,
     Log_Posterior,
-    U_HMC,
+    NegLogPosterior,
 )
 
 from quinn.func.funcs import Sine
@@ -66,14 +66,14 @@ def main():
     nnet = torch.nn.Linear(1, 1, bias=True)
     param_dim = sum(p.numel() for p in nnet.parameters())
     # The model is defined in a wrapper class.
-    NNmodel = NNWrap_MCMC(nnet)
+    NNmodel = NNWrap_Torch(nnet)
 
     # Define likelihood and prior modules
 
     likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
     prior = Gaussian_prior(sigma=10, n_params=param_dim)
     log_posterior = Log_Posterior(likelihood, prior)
-    u_hmc = U_HMC(likelihood, prior)
+    u_hmc = NegLogPosterior(likelihood, prior)
 
     # Define HMC sampler
 

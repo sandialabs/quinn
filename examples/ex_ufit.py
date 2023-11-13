@@ -9,13 +9,14 @@ from quinn.mcmc.admcmc import AMCMC
 from quinn.mcmc.hmc import HMC_NN
 from quinn.vi.vi import VI_NN
 from quinn.ens.ens import Ens_NN
-from quinn.mcmc.posterior_funcs import (
+from quinn.ens.swag import SWAG_NN
+from quinn.nns.posterior_funcs import (
     Gaussian_likelihood_assumed_var,
     Gaussian_prior,
     Log_Posterior,
-    U_HMC,
+    NegLogPosterior,
 )
-from quinn.nns.nnwrap import NNWrap_MCMC
+from quinn.nns.nnwrap import NNWrap_Torch, NNWrap
 
 from quinn.func.funcs import Ackley, Sine, Sine10, blundell
 
@@ -111,7 +112,7 @@ def main():
 
     if meth == "mcmc":
         nmc = 100
-        nnet = NNWrap_MCMC(nnet)
+        nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=100, n_params=param_dim)
         log_posterior = Log_Posterior(likelihood, prior)
@@ -121,11 +122,11 @@ def main():
         uqnet.fit(xtrn, ytrn, zflag=False, datanoise=datanoise)
     elif meth == "hmc":
         nmc = 100
-        nnet = NNWrap_MCMC(nnet)
+        nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=100, n_params=param_dim)
         log_posterior = Log_Posterior(likelihood, prior)
-        u_hmc = U_HMC(likelihood, prior)
+        u_hmc = NegLogPosterior(likelihood, prior)
         sampling_params = {"epsilon": 0.0025, "L_steps": 3}
         hmc = HMC_NN(u_hmc, sampling_params, nmcmc=20000, nburning=0)
         uqnet = MCMC_NN(nnet, verbose=True, sampler=hmc, log_post=log_posterior)
@@ -147,6 +148,26 @@ def main():
         nmc = 3
         uqnet = Ens_NN(nnet, nens=nmc, dfrac=0.8, verbose=True)
         uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
+    elif meth == "swag":
+        """
+        This example uses
+        """
+        nens = 3
+        nnet = NNWrap_Torch(nnet)
+        likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
+        prior = Gaussian_prior(sigma=3, n_params=param_dim)
+        neg_logposterior = NegLogPosterior(likelihood, prior)
+        uqnet = SWAG_NN(
+            nnet,
+            neg_logposterior,
+            param_dim,
+            nens=nens,
+            dfrac=0.8,
+            verbose=True,
+            n_steps=100,
+        )
+        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=1000)
+
     else:
         print(f"UQ Method {meth} is unknown. Exiting.")
         sys.exit()
