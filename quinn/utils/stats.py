@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+"""Summary
+"""
 
 import numpy as np
 
@@ -45,6 +47,27 @@ def get_domain(xx):
     domain[:, 1] = np.max(xx, axis=0)
 
     return domain
+
+def intersect_domain(dom1, dom2):
+    """Create an intersection domain/hypercube.
+
+    Args:
+        dom1 (np.ndarray): `(d,2)` first domain array.
+        dom2 (np.ndarray): `(d,2)` second domain array.
+
+    Returns:
+        np.ndarray: `(d,2)` intersection domain or None if no intersection.
+    """
+    assert(dom1.shape[0]==dom2.shape[0])
+    domain = np.empty_like(dom1)
+    domain[:, 0]=np.max((dom1[:,0], dom2[:,0]), axis=0)
+    domain[:, 1]=np.min((dom1[:,1], dom2[:,1]), axis=0)
+
+    if (domain[:,1]-domain[:,0]<0).any():
+        return None
+
+    return domain
+
 
 
 def diam(xx):

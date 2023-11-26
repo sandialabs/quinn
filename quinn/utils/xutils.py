@@ -172,3 +172,85 @@ def get_pdf(data, target):
 
     # Return the target points and the probability density
     return dens
+
+####################################################################
+####################################################################
+
+def strarr(array):
+    """Turn an array into a neatly formatted one for annotating figures.
+
+    Args:
+        array (np.ndarray): 1d array
+
+    Returns:
+        list: list of floats with two decimal digits
+    """
+    return [float("{:0.2f}".format(i)) for i in array]
+
+
+####################################################################
+####################################################################
+
+def project(a, b):
+    """Project a vector onto another vector in high-d space.
+
+    Args:
+        a (np.ndarray): The 1d array to be projected.
+        b (np.ndarray): The array to project onto.
+
+    Returns:
+        tuple(np.ndarray, np.ndarray): tuple (projection, residual) where projection+residual=a, and projection is orthogonal to residual, and colinear with b.
+    """
+    assert(a.shape[0]==b.shape[0])
+    proj = (np.dot(a, b)/ np.dot(b, b))*b
+    resid = a - proj
+    return proj, resid
+
+####################################################################
+####################################################################
+
+def pick_basis(x1, x2, x3, x0=None, random_direction_in_plane=None):
+    """Given three points in a high-d space, picks a basis in a plane that goes through these points.
+
+    Args:
+        x1 (np.ndarray): 1d array, the first point
+        x2 (np.ndarray): 1d array, the second point
+        x3 (np.ndarray): 1d array, the third point
+        x0 (np.ndarray, optional): 1d array, the central point of basis. Defaults to None, in which case the center-of-mass is selected.
+        random_direction_in_plane (np.ndarray, optional): Direction aligned with the first basis. Has to be in the plane already. Defaults to None, in which case a random direction is selected.
+
+    Returns:
+        tuple(np.ndarray, np.ndarray, np.ndarray): tuple(origin, e1, e2) of the origin and two basis directions.
+    """
+    assert(x1.shape==x2.shape and x1.shape==x3.shape)
+    if x0 is None:
+        x0 = (x1+x2+x3)/3.
+
+    assert(x0.shape==x1.shape)
+
+
+    # random direction in that plane
+    x1230 = np.vstack((x1-x0, x2-x0, x3-x0))
+    assert(np.linalg.matrix_rank(x1230)==2)
+    if random_direction_in_plane is None:
+        random_direction_in_plane = np.dot(np.random.rand(1, 3), x1230)[0]
+    random_direction_in_plane /= np.linalg.norm(random_direction_in_plane)
+    assert(np.linalg.matrix_rank(np.vstack((x1230, random_direction_in_plane)))==2)
+
+    proj_norms = np.empty(3,)
+    resid_norms = np.empty(3,)
+    for i in range(3):
+        proj, resid = project(x1230[i], random_direction_in_plane)
+        proj_norms[i] = np.linalg.norm(proj)
+        resid_norms[i] = np.linalg.norm(resid)
+
+    pm = np.argmax(proj_norms)
+    rm = np.argmax(resid_norms)
+
+    origin = x0
+    e1, _ = project(x1230[pm], random_direction_in_plane)
+    _, e2 = project(x1230[rm], random_direction_in_plane)
+
+    return origin, e1, e2
+
+

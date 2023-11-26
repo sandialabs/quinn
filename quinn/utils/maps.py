@@ -49,7 +49,7 @@ def scaleTo01(xx):
     """
     return (xx - np.min(xx, axis=0)) / (np.max(xx, axis=0) - np.min(xx, axis=0))
 
-def standartize(xx):
+def standardize(xx):
     """Normalize an array, i.e. map it to zero mean and unit variance.
 
     Args:
@@ -183,14 +183,14 @@ class LinearScaler(XMap):
 
         return x
 
-class Standartizer(LinearScaler):
-    """Standartizer map, linearly scaling data to zero mean and unit variance."""
+class Standardizer(LinearScaler):
+    """Standardizer map, linearly scaling data to zero mean and unit variance."""
 
     def __init__(self, x):
         """Initialize with a given 2d array.
 
         Args:
-            x (np.ndarray): Data according to which the standartization happens.
+            x (np.ndarray): Data according to which the standardization happens.
         Note:
             This also can be accomplished by function `normalize`
         """

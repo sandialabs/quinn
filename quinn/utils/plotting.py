@@ -15,7 +15,7 @@ import matplotlib.colors as mc
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-from .xutils import get_pdf, sample_sphere
+from .xutils import get_pdf, sample_sphere, pick_basis, project, strarr
 from .maps import scale01ToDom
 
 #############################################################
@@ -1180,167 +1180,293 @@ def plot_shade(xdata, ydata, nq=51, cmap=mpl.cm.BuGn,
 
 #############################################################
 
-def plot_fcn1d(models, modelpars, ndim,
-               center=None, dom=None, scale=1.,
-               ngr=111, ncol=3, nrow=5,
-               labels=None, custom_title=''):
-    """Plotting 1d interval slices (in any direction, not necessarily horizontal/vertical) of a set of models.
+def plot_1d_anchored_single(models, modelpars,
+                            anchor1, anchor2=None,
+                            pad=0.5, scale=1., ngr=111,
+                            modellabels=None, clearax=False,
+                            verbose_labels=False,
+                            legend_show=True, ax=None, figname=None):
+    """Plots 1d slices of a list of models going through one or two anchor points.
 
     Args:
         models (list[callable]): List of model evaluators.
         modelpars (list[tuple]): List of model parameter tuples, one for each.
-        ndim (int): Input dimensionality `d` of the models.
-        center (np.ndarray, optional): Center location of the interval slice, an array of size  `(d,)`. If None, the code picks randomly.
-        dom (None, optional): Input domain to scale to, an array of size `(d,2)`. If None, default to `[0,1]^d`.
-        scale (float, optional): Scale, i.e. interval length.
-        ngr (int, optional): Number of grid points, i.e. resolution.
-        ncol (int, optional): Number of columns in figure matrix.
-        nrow (int, optional): Number of rows in figure matrix.
-        labels (list[str], optional): Labels of model evaluators.
-        custom_title (str, optional): Custom title of the whole figure.
+        anchor1 (np.ndarray): 1d array of the first anchor point.
+        anchor2 (np.ndarray, optional): 1d array of the second anchor point. Defaults to None, which means a randomly selected second anchor a given distance away from the first.
+        pad (float, optional): Padding on both sides of the interval, so the slice goes beyond the anchors.
+        scale (float, optional): The distance of the second anchor from the first, if randomly selected.
+        ngr (int, optional): Number of grid points for plotting.
+        modellabels (None, optional): Labels/names of the models for legend.
+        clearax (bool, optional): Clear axes ticks and labels for less busy plotting.
+        verbose_labels (bool, optional): Optionally, annotates the points showing their coordinates. Makes sense for low-dim cases.
+        legend_show (bool, optional): Whether to show the legend or not.
+        ax (None, optional): Axis handle. Default to None, i.e. current axis.
+        figname (None, optional): Optionally, save to a figure with a given name.
     """
-    tgr = np.linspace(-1, 1, ngr)
+    if modellabels is None:
+        modellabels = [f'Model {i+1}' for i in range(len(models))]
 
-    ntot = ncol * nrow
+    if ax is None:
+        ax = plt.gca()
+    if anchor2 is None:
+        anchor2 = sample_sphere(center=anchor1, rad=scale, nsam=1).reshape(-1,)
+        origin, e1 = anchor1, anchor2-anchor1
+        ticklabels = [f"A$-\Delta$", f'A', f'A$+\Delta$']
+    else:
+        origin, e1 = (anchor1+anchor2)/2., (anchor2-anchor1)/2.
+        ticklabels = [r'A$_1$', '', r'A$_2$']
+
+    if verbose_labels:
+        ticklabels2 = [f"\n{strarr(origin-e1)}", f"\n{strarr(origin)}", f"\n{strarr(origin+e1)}"]
+        ticklabels = [a+b for a,b in zip(ticklabels, ticklabels2)]
+
+    tgr = np.linspace(-1.-pad, 1.+pad, ngr)
+
+    xgr = np.array([origin + e1*tt for tt in tgr])
+
+    for model, modelpar, modellabel in zip(models, modelpars, modellabels):
+        ygr = model(xgr, modelpar)
+        ax.plot(tgr, ygr, label=modellabel)
 
 
-    figs, axarr = plt.subplots(nrow, ncol, figsize=(ncol*4, nrow*4))
-    if ntot==1: axarr=[[axarr]]
-
-    if labels is None:
-        labels = ['']*len(models)
-
-    for i in range(ntot):
-        print(f"Plotting slice {i+1} / {ntot}")
-        irow, icol = divmod(i, ncol)
-
-        if center is None:
-            xpt1 = np.random.rand(ndim,)
-        else:
-            xpt1 = center.copy()
-        xpt2 = sample_sphere(center=xpt1, rad=scale, nsam=1).reshape(-1,)
-        #xpt2 = np.random.rand(ndim,)
-
-        if dom is not None:
-            xpt1 = scale01ToDom(xpt1.reshape(-1,ndim), dom).ravel()
-            xpt2 = scale01ToDom(xpt2.reshape(-1,ndim), dom).ravel()
+    #plt.annotate('Something', (-1,0))
 
 
-        xgr = np.array([xpt1 + (xpt2-xpt1)*tt for tt in tgr])
+    if clearax:
+        #ax.set_frame_on(False)
+        #ax.get_yaxis().set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(True)
+        ax.spines['left'].set_visible(True)
+        ax.grid(False)
+        # xmin, xmax = ax.get_xaxis().get_view_interval()
+        # ymin, ymax = ax.get_yaxis().get_view_interval()
+        # ax.add_artist(plt.Line2D((xmin, xmax), (ymin, ymin), color='black', linewidth=2))
+        ax.xaxis.set_ticklabels([''])
+        ax.yaxis.set_ticklabels([''])
+    else:
+        ax.xaxis.set_ticks([-1, 0, 1])
+        ax.xaxis.set_ticklabels(ticklabels)
+    if legend_show:
+        ax.legend()
 
-        thisax = axarr[irow][icol]
-        j=0
-        for model, modelpar in zip(models, modelpars):
-            ygr = model(xgr, modelpar)
-            thisax.plot(tgr, ygr, label=labels[j])
-            j+=1
-
-        #thisax.set_frame_on(False)
-        #thisax.get_yaxis().set_visible(False)
-        thisax.spines['top'].set_visible(False)
-        thisax.spines['right'].set_visible(False)
-        thisax.spines['bottom'].set_visible(True)
-        thisax.spines['left'].set_visible(True)
-        thisax.grid(False)
-        xmin, xmax = thisax.get_xaxis().get_view_interval()
-        ymin, ymax = thisax.get_yaxis().get_view_interval()
-        # thisax.add_artist(plt.Line2D((xmin, xmax), (ymin, ymin), color='black', linewidth=2))
-        thisax.xaxis.set_ticklabels([])
-
-    handles, labels = plt.gca().get_legend_handles_labels()
-    plt.gca().legend(handles, labels, loc='lower left',
-                     ncol=ncol, bbox_to_anchor=[-2, -0.5])
-    figs.suptitle(custom_title, fontsize=33)
-
-    plt.savefig('fcn1d.png')
+    if figname is not None:
+        plt.savefig(figname)
 
 #############################################################
 
-def plot_fcn2d(models, modelpars, ndim,
-               center=None, dom=None, scale=1.,
-               ngr=111, ncol=3, nrow=5,
-               labels=None, custom_title=''):
-    """Plotting 2d plane slices (in any direction, not necessarily horizontal/vertical) of a set of models.
+def plot_1d_anchored(models, modelpars,
+                     anchor1,
+                     pad=0.5, scale=1., ngr=111,
+                     modellabels=None, legend_show=False,
+                     clearax=False,
+                     ncolrow=(3,5)):
+    """Plot multiple 1d slices of models all going through a given anchor point.
 
     Args:
         models (list[callable]): List of model evaluators.
         modelpars (list[tuple]): List of model parameter tuples, one for each.
-        ndim (int): Input dimensionality `d` of the models.
-        center (np.ndarray, optional): Center location of the plane slice, an array of size  `(d,)`. If None, the code picks randomly.
-        dom (None, optional): Input domain to scale to, an array of size `(d,2)`. If None, default to `[0,1]^d`.
-        scale (float, optional): Scale, i.e. plane side length.
-        ngr (int, optional): Number of grid points per dimension, i.e. resolution.
-        ncol (int, optional): Number of columns in figure matrix.
-        nrow (int, optional): Number of rows in figure matrix.
-        labels (list[str], optional): Labels of model evaluators.
-        custom_title (str, optional): Custom title of the whole figure.
+        anchor1 (np.ndarray): The anchor point, 1d array.
+        pad (float, optional): Padding on both sides of the interval, so the slice goes beyond the anchors.
+        scale (float, optional): The distance of the second anchor from the first, if randomly selected.
+        ngr (int, optional): Number of grid points for plotting.
+        modellabels (None, optional): Labels/names of the models for legend.
+        legend_show (bool, optional): Whether to show the legend or not.
+        clearax (bool, optional): Clear axes ticks and labels for less busy plotting.
+        verbose_labels (bool, optional): Optionally, annotates the points showing their coordinates. Makes sense for low-dim cases.
+        ncolrow (tuple, optional): Number of columns and rows in a tuple. Defaults to (3, 5).
     """
-    tgr = np.linspace(-1, 1, ngr)
-
+    ncol, nrow = ncolrow
     ntot = ncol * nrow
 
 
     figs, axarr = plt.subplots(nrow, ncol, figsize=(ncol*4, nrow*4))
     if ntot==1: axarr=[[axarr]]
 
-    if labels is None:
-        labels = ['']*len(models)
+    for i in range(ntot):
+        print(f"Plotting slice {i+1} / {ntot}")
+        irow, icol = divmod(i, ncol)
 
-    colors = ['r', 'g', 'b', 'm', 'y', 'k']
+        thisax = axarr[irow][icol]
+
+        plot_1d_anchored_single(models, modelpars, anchor1, anchor2=None,
+                     pad=pad, ngr=ngr, scale=scale,
+                     modellabels=modellabels, clearax=clearax,
+                     verbose_labels=False, legend_show=False,
+                     ax=thisax, figname=None)
+
+    if legend_show:
+        handles, labels = plt.gca().get_legend_handles_labels()
+        plt.gca().legend(handles, labels, loc='lower left',
+                         ncol=6, bbox_to_anchor=[-2, -0.5])
+    plt.savefig('fcn_1dslices.png')
+
+#############################################################
+
+def plot_2d_anchored_single(models, modelpars,
+                            anchor1, anchor2=None, anchor3=None,
+                            squished=True, pad=0.5, scale=1., ngr=111,
+                            modellabels=None, colorful=False, clearax=False,
+                            legend_show=True, modelcolors=None, ax=None, figname=None):
+    """Plots 1d slices of a list of models going through one or two anchor points.
+
+    Args:
+        models (list[callable]): List of model evaluators.
+        modelpars (list[tuple]): List of model parameter tuples, one for each.
+        anchor1 (np.ndarray): 1d array of the first anchor point.
+        anchor2 (np.ndarray, optional): 1d array of the second anchor point. Defaults to None, which means a randomly selected second anchor a given distance away from the first.
+        anchor3 (np.ndarray, optional): 1d array of the third anchor point. Defaults to None, which means a randomly selected second anchor a given distance away from the first.
+        squished (bool, optional): If squished, the bases in the plane are not orthogonal.
+        pad (float, optional): Padding on both sides of the domain, so the slice goes beyond the anchors.
+        scale (float, optional): The distance of the second anchor from the first, if randomly selected.
+        ngr (int, optional): Number of grid points for plotting.
+        modellabels (None, optional): Labels/names of the models for legend.
+        colorful (bool, optional): Whether printing with colored surface or simply contours.
+        clearax (bool, optional): Clear axes ticks and labels for less busy plotting.
+        legend_show (bool, optional): Whether to show the legend or not.
+        modelcolors (list, optional): List of model colors.
+        ax (None, optional): Axis handle. Default to None, i.e. current axis.
+        figname (None, optional): Optionally, save to a figure with a given name.
+    """
+
+    # TODO: need to make this cyclic and remove the assertion
+    if modelcolors is None:
+        modelcolors = ['r', 'g', 'b', 'm', 'y', 'k']
+        assert(len(models)<=6)
+
+    if modellabels is None:
+        modellabels = [f'Model {i+1}' for i in range(len(models))]
+
+
+    if ax is None:
+        ax = plt.gca()
+    if anchor2 is None:
+        anchor2 = sample_sphere(center=anchor1, rad=scale, nsam=1).reshape(-1,)
+    if anchor3 is None:
+        anchor3 = sample_sphere(center=anchor1, rad=scale, nsam=1).reshape(-1,)
+
+    if squished:
+        origin, e1, e2 = anchor1, anchor2-anchor1, anchor3-anchor1
+            # ticklabelsx = [f"A$_x-\Delta_x$", f'A$_x$', f'A$_x+\Delta_x$']
+            # ticklabelsy = [f"A$_y-\Delta_y$", f'A$_y$', f'A$_y+\Delta_y$']
+    else:
+        origin, e1, e2 = pick_basis(anchor1, anchor2, anchor3)
+
+
+    ticklabelsx = []
+    ticklabelsy = []
+
+
+    tgr = np.linspace(-1.0-pad, 1.+pad, ngr)
+
+    tx, ty = np.meshgrid(tgr, tgr)
+    tgr2 = np.vstack((tx.flatten(), ty.flatten())).T #np.dstack((xp, yp))
+    xgr = np.array([origin + e1*tt[0] + e2*tt[1] for tt in tgr2])
+
+    j=0
+    for model, modelpar, modellabel, modelcolor in zip(models, modelpars, modellabels, modelcolors):
+        zgr = model(xgr, modelpar)
+        if colorful:
+            cs = ax.contourf(tx, ty, zgr.reshape(tx.shape), 22, cmap='RdYlGn_r')
+            ax.contour(cs, colors=modelcolor, linewidths=0.5)
+        else:
+            ax.contour(tx, ty, zgr.reshape(tx.shape), levels=22, linewidths=1, colors=modelcolor)
+        j+=1
+
+
+    # ax.plot([0], [0], 'ko')
+    # plt.annotate('Something', (-1,0))
+
+
+    if clearax:
+        #ax.set_frame_on(False)
+        #ax.get_yaxis().set_visible(False)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.grid(False)
+        # xmin, xmax = ax.get_xaxis().get_view_interval()
+        # ymin, ymax = ax.get_yaxis().get_view_interval()
+        # thisax.add_artist(plt.Line2D((xmin, xmax), (ymin, ymin), color='black', linewidth=2))
+        ax.xaxis.set_ticklabels([])
+        ax.yaxis.set_ticklabels([])
+    else:
+        ax.xaxis.set_ticks([-1, 0, 1])
+        ax.xaxis.set_ticklabels(ticklabelsx)
+        ax.yaxis.set_ticks([-1, 0, 1])
+        ax.yaxis.set_ticklabels(ticklabelsy)
+
+    if legend_show:
+        ax.legend()
+
+    print("Distances: ", np.linalg.norm(anchor1-anchor2), np.linalg.norm(anchor1-anchor3), np.linalg.norm(anchor3-anchor2))
+    if figname is not None:
+        plt.savefig(figname)
+
+#############################################################
+
+def plot_2d_anchored(models, modelpars, anchor1, anchor2=None,
+                  pad=0.5, scale=1., ngr=111,
+                  modellabels=None, squished=False, colorful=False,
+                  legend_show=False, modelcolors=None,
+                  clearax=False, ncolrow=(3,5)):
+    """Plot multiple 1d slices of models all going through a given anchor point or given two anchor points.
+
+    Args:
+        models (list[callable]): List of model evaluators.
+        modelpars (list[tuple]): List of model parameter tuples, one for each.
+        anchor1 (np.ndarray): The first anchor point, 1d array.
+        anchor2 (np.ndarray, optional): The second anchor point. Defaults to None, in which case it is selected randomly.
+        pad (float, optional): Padding on both sides of the interval, so the slice goes beyond the anchors.
+        scale (float, optional): The distance of the second anchor from the first, if randomly selected.
+        ngr (int, optional): Number of grid points for plotting.
+        modellabels (None, optional): Labels/names of the models for legend.
+        squished (bool, optional): If squished, the bases in the plane are not orthogonal.
+        colorful (bool, optional): Whether printing with colored surface or simply contours.
+        legend_show (bool, optional): Whether to show the legend or not.
+        modelcolors (list, optional): List of model colors.
+        clearax (bool, optional): Clear axes ticks and labels for less busy plotting.
+        ncolrow (tuple, optional): Number of columns and rows in a tuple. Defaults to (3, 5).
+    """
+
+    # TODO: need to make this cyclic and remove the assertion
+    if modelcolors is None:
+        modelcolors = ['r', 'g', 'b', 'm', 'y', 'k']
+        assert(len(models)<=6)
+
+    ncol, nrow = ncolrow
+    ntot = ncol * nrow
+
+
+    figs, axarr = plt.subplots(nrow, ncol, figsize=(ncol*4, nrow*4))
+    if ntot==1: axarr=[[axarr]]
+
+    if anchor2 is None:
+        anchor2 = sample_sphere(center=anchor1, rad=scale, nsam=1).reshape(-1,)
 
     for i in range(ntot):
         print(f"Plotting slice {i+1} / {ntot}")
         irow, icol = divmod(i, ncol)
 
-        if center is None:
-            xpt1 = np.random.rand(ndim,)
-        else:
-            xpt1 = center.copy()
-        xpt2 = sample_sphere(center=xpt1, rad=scale, nsam=1).reshape(-1,)
-        xpt3 = sample_sphere(center=xpt1, rad=scale, nsam=1).reshape(-1,)
-        #xpt2 = np.random.rand(ndim,)
-
-        if dom is not None:
-            xpt1 = scale01ToDom(xpt1.reshape(-1,ndim), dom).ravel()
-            xpt2 = scale01ToDom(xpt2.reshape(-1,ndim), dom).ravel()
-            xpt3 = scale01ToDom(xpt3.reshape(-1,ndim), dom).ravel()
-
-
-        # xgr = np.array([xpt1 + (xpt2-xpt1)*tt for tt in tgr])
-        # ygr = np.array([xpt1 + (xpt3-xpt1)*tt for tt in tgr])
-        tx, ty = np.meshgrid(tgr, tgr)
-        tgr2 = np.vstack((tx.flatten(), ty.flatten())).T #np.dstack((xp, yp))
-        xgr = np.array([xpt1 + (xpt2-xpt1)*tt[0] + (xpt3-xpt1)*tt[1] for tt in tgr2])
-
-
         thisax = axarr[irow][icol]
-        j=0
-        for model, modelpar in zip(models, modelpars):
-            zpos = model(xgr, modelpar)
-            thisax.contour(tx, ty, zpos.reshape(tx.shape), levels=22, linewidths=1, colors=colors[j])
 
-            j+=1
+        plot_2d_anchored_single(models, modelpars, anchor1, anchor2=anchor2,
+                     pad=pad, ngr=ngr, squished=squished, scale=scale,
+                     modellabels=modellabels, modelcolors=modelcolors,
+                     clearax=clearax, colorful=colorful,
+                     legend_show=False,
+                     ax=thisax, figname=None)
 
-        #thisax.set_frame_on(False)
-        #thisax.get_yaxis().set_visible(False)
-        thisax.spines['top'].set_visible(False)
-        thisax.spines['right'].set_visible(False)
-        thisax.spines['bottom'].set_visible(False)
-        thisax.spines['left'].set_visible(False)
-        thisax.grid(False)
-        xmin, xmax = thisax.get_xaxis().get_view_interval()
-        ymin, ymax = thisax.get_yaxis().get_view_interval()
-        # thisax.add_artist(plt.Line2D((xmin, xmax), (ymin, ymin), color='black', linewidth=2))
-        thisax.xaxis.set_ticklabels([])
-        thisax.yaxis.set_ticklabels([])
+    if legend_show:
+        custom_lines = [Line2D([0], [0], color=cc, linestyle='-', lw=2) for cc in modelcolors]
+        leg = plt.legend(custom_lines, modellabels, bbox_to_anchor=(-2.0,-0.3),
+                         ncol=6, loc="lower left")
 
-    custom_lines = [Line2D([0], [0], color=cc, linestyle='-', lw=2) for cc in colors]
-    leg = plt.legend(custom_lines, labels, bbox_to_anchor=(-2.0,-0.3), ncol=2, loc="lower left")
+    plt.savefig('fcn_2dslices.png')
 
-    figs.suptitle(custom_title, fontsize=33)
-
-    plt.savefig('fcn2d.png')
-
+#############################################################
 
 #############################################################
 
@@ -1572,7 +1698,6 @@ def plot_1d(func, domain, ax=None, idim=0, odim=0, nom=None, ngr=100, color='ora
 
 
     xg[:, idim] = xg1
-
     yg = func(xg)[:, odim]
 
     ax.plot(xg[:, idim], yg, color=color, linestyle=lstyle)
