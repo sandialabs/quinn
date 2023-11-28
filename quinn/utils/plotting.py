@@ -1358,7 +1358,7 @@ def plot_2d_anchored_single(models, modelpars,
     ticklabelsy = []
 
 
-    tgr = np.linspace(-1.0-pad, 1.+pad, ngr)
+    tgr = np.linspace(-1.-pad, 1.+pad, ngr)
 
     tx, ty = np.meshgrid(tgr, tgr)
     tgr2 = np.vstack((tx.flatten(), ty.flatten())).T #np.dstack((xp, yp))
@@ -1401,7 +1401,6 @@ def plot_2d_anchored_single(models, modelpars,
     if legend_show:
         ax.legend()
 
-    print("Distances: ", np.linalg.norm(anchor1-anchor2), np.linalg.norm(anchor1-anchor3), np.linalg.norm(anchor3-anchor2))
     if figname is not None:
         plt.savefig(figname)
 

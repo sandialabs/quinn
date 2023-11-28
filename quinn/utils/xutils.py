@@ -253,4 +253,33 @@ def pick_basis(x1, x2, x3, x0=None, random_direction_in_plane=None):
 
     return origin, e1, e2
 
+####################################################################
+####################################################################
 
+def safe_cholesky(cov):
+    r"""Cholesky decomposition with some error handlers, and using SVD+QR trick in case the covariance is degenerate.
+
+    Args:
+        cov (np.ndarray): Positive-definite or zero-determinant symmetric matrix `C`.
+
+    Returns:
+        np.ndarray: Lower-triangular factor `L` such that `C=L L^T`.
+    """
+
+    dim, dim_ = cov.shape
+    assert(dim_==dim)
+    assert(np.linalg.norm(cov-cov.T)<1.e-15)
+
+    if np.min(np.linalg.eigvals(cov))<0:
+        print("The matrix is not a covariance matrix. Exiting.")
+        sys.exit()
+    elif np.min(np.linalg.eigvals(cov))<1e-15:
+        print("Small/near-zero eigenvalue: replacing Cholesky with SVD+QR.")
+        u, s, vd = np.linalg.svd(cov, hermitian=True)
+        lower = np.linalg.qr(np.dot(np.diag(np.sqrt(s)),vd))[1].T
+    else:
+        lower = np.linalg.cholesky(cov)
+
+    assert(np.linalg.norm(cov - np.dot(lower, lower.T)) < 1.e15)
+
+    return lower
