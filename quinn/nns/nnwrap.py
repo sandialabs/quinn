@@ -218,7 +218,10 @@ class NNWrap_Torch(torch.nn.Module):
             device = self.nnmodel.device
         except AttributeError:
             device = "cpu"
-        ll = [tch(flat_parameter[s:e], device=device) for (s, e) in self.indices]
+        if isinstance(flat_parameter, np.ndarray):
+            ll = [tch(flat_parameter[s:e], device=device) for (s, e) in self.indices]
+        else:
+            ll = [flat_parameter[s:e] for (s, e) in self.indices]
         for i, p in enumerate(self.nnmodel.parameters()):
             if len(p.shape) > 0:
                 ll[i] = ll[i].view(*p.shape)

@@ -30,6 +30,7 @@ class Ens_NN(QUiNNBase):
         self.verbose = verbose
         self.nens = nens
         self.dfrac = dfrac
+        self.type_ens = "ens"
         self.learners = []
         for i in range(nens):
             self.learners.append(Learner(nnmodel))
@@ -93,7 +94,7 @@ class Ens_NN(QUiNNBase):
         """
         if nens is None:
             nens = self.nens
-        if nens > self.nens:
+        if nens > self.nens and self.type_ens == "ens":
             print(
                 f"Warning: Requested {nens} but only {self.nens} ensemble members available."
             )
@@ -103,7 +104,10 @@ class Ens_NN(QUiNNBase):
 
         y_all = []
         for jens in range(nens):
-            y = self.learners[permuted_inds[jens]].predict(x)
+            if self.type_ens == "ens":
+                y = self.learners[permuted_inds[jens]].predict(x)
+            else:
+                y = self.predict_sample(x)
             y_all.append(y)
 
         return y_all

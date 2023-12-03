@@ -37,10 +37,24 @@ class RNet(MLPBase):
         paramsb (list[torch.nn.Parameter]): List of Resnet bias vectors.
         device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
     """
-    def __init__(self, rdim, nlayers, wp_function=None, indim=None,
-                       outdim=None, biasorno=True, nonlin=True, mlp=False,
-                       layer_pre=False, layer_post=False,final_layer=None,
-                       device='cpu', init_factor=1, sum_dim=1):
+
+    def __init__(
+        self,
+        rdim,
+        nlayers,
+        wp_function=None,
+        indim=None,
+        outdim=None,
+        biasorno=True,
+        nonlin=True,
+        mlp=False,
+        layer_pre=False,
+        layer_post=False,
+        final_layer=None,
+        device="cpu",
+        init_factor=1,
+        sum_dim=1,
+    ):
         """Instantiate ResNet object.
 
         Args:
@@ -55,7 +69,7 @@ class RNet(MLPBase):
             layer_pre (bool, optional): Whether there is a pre-resnet linear layer. Defaults to False.
             layer_post (bool, optional): Whether there is a post-resnet linear layer. Defaults to False.
             final_layer (str, optional): If there is a final layer function. Two options: "exp" for exponential function; "sum" for sum function which will reduce rank of the output tensor. Defaults to no final layer.
-            sum_dim (int, optional): If final layer function is sum, it will select i which dimension to perform sum. Defaults to 1  
+            sum_dim (int, optional): If final layer function is sum, it will select i which dimension to perform sum. Defaults to 1
             device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
             init_factor(int): Multiply initial condition tensors by factor.
         """
@@ -68,9 +82,9 @@ class RNet(MLPBase):
         self.nlayers = nlayers
         self.biasorno = biasorno
         if wp_function is None:
-            self.wp_function = NonPar(nlayers+1)
+            self.wp_function = NonPar(nlayers + 1)
         else:
-            assert(isinstance(wp_function, LayerFcn))
+            assert isinstance(wp_function, LayerFcn)
             self.wp_function = wp_function
         self.step_size = 1.0 / (nlayers + 1.0)
         self.mlp = mlp
@@ -89,38 +103,61 @@ class RNet(MLPBase):
             assert self.layer_post
 
         if self.layer_pre:
-            self.weight_pre = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.rdim, self.indim) -1.)/math.sqrt(self.indim))
-            self.bias_pre = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.rdim) -1.)/math.sqrt(self.indim))
+            self.weight_pre = torch.nn.Parameter(
+                self.init_factor
+                * (2.0 * torch.rand(self.rdim, self.indim) - 1.0)
+                / math.sqrt(self.indim)
+            )
+            self.bias_pre = torch.nn.Parameter(
+                self.init_factor
+                * (2.0 * torch.rand(self.rdim) - 1.0)
+                / math.sqrt(self.indim)
+            )
 
         if self.layer_post:
-            self.weight_post = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.outdim, self.rdim) -1.)/math.sqrt(self.rdim))
-            self.bias_post = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.outdim) -1.)/math.sqrt(self.rdim))
+            self.weight_post = torch.nn.Parameter(
+                self.init_factor
+                * (2.0 * torch.rand(self.outdim, self.rdim) - 1.0)
+                / math.sqrt(self.rdim)
+            )
+            self.bias_post = torch.nn.Parameter(
+                self.init_factor
+                * (2.0 * torch.rand(self.outdim) - 1.0)
+                / math.sqrt(self.rdim)
+            )
 
         pars_w = []
         for ip in range(self.wp_function.npar):
-            ww = torch.nn.Parameter(self.init_factor*(2. * torch.rand(self.rdim, self.rdim) -1.)/math.sqrt(self.rdim))
+            ww = torch.nn.Parameter(
+                self.init_factor
+                * (2.0 * torch.rand(self.rdim, self.rdim) - 1.0)
+                / math.sqrt(self.rdim)
+            )
             pars_w.append(ww)
-            self.register_parameter(name='ww_'+str(ip), param=ww)
-            #pars_w.append(torch.nn.Parameter(torch.randn(rdim, rdim)))
-        #self.paramsw = pars_w #torch.nn.ParameterList(pars_w)
+            self.register_parameter(name="ww_" + str(ip), param=ww)
+            # pars_w.append(torch.nn.Parameter(torch.randn(rdim, rdim)))
+        # self.paramsw = pars_w #torch.nn.ParameterList(pars_w)
 
         if self.biasorno:
             pars_b = []
             for ip in range(self.wp_function.npar):
-                bb = torch.nn.Parameter(self.init_factor*(2.*torch.rand(self.rdim)-1.)/math.sqrt(self.rdim))
+                bb = torch.nn.Parameter(
+                    self.init_factor
+                    * (2.0 * torch.rand(self.rdim) - 1.0)
+                    / math.sqrt(self.rdim)
+                )
                 pars_b.append(bb)
-                self.register_parameter(name='bb_'+str(ip), param=bb)
+                self.register_parameter(name="bb_" + str(ip), param=bb)
 
-                #pars_b.append(torch.nn.Parameter(torch.randn(rdim)))
-            #self.paramsb = pars_b #torch.nn.ParameterList(pars_b)
-
+                # pars_b.append(torch.nn.Parameter(torch.randn(rdim)))
+            # self.paramsb = pars_b #torch.nn.ParameterList(pars_b)
 
         if nonlin:
             self.activ = torch.nn.Tanh()
         else:
             self.activ = torch.nn.Identity()
 
-        self.to(device)    
+        self.to(device)
 
     def forward(self, x):
         r"""Forward function.
@@ -131,17 +168,21 @@ class RNet(MLPBase):
         Returns:
             torch.Tensor: Output tensor of size :math:`(N,o)`.
         """
-        out = x+0.0
+        out = x + 0.0
 
         # Note that the prelayer has activation, too, to avoid two linear layers in succession
         if self.layer_pre:
             out = self.activ(F.linear(out, self.weight_pre, self.bias_pre))
 
-        paramsw = [getattr(self, 'ww_'+str(ip)) for ip in range(self.wp_function.npar)]
+        paramsw = [
+            getattr(self, "ww_" + str(ip)) for ip in range(self.wp_function.npar)
+        ]
         if self.biasorno:
-            paramsb = [getattr(self, 'bb_'+str(ip)) for ip in range(self.wp_function.npar)]
+            paramsb = [
+                getattr(self, "bb_" + str(ip)) for ip in range(self.wp_function.npar)
+            ]
 
-        for i in range(self.nlayers+1):
+        for i in range(self.nlayers + 1):
             weight = self.wp_function(paramsw, self.step_size * i)
             if self.biasorno:
                 bias = self.wp_function(paramsb, self.step_size * i)
@@ -158,8 +199,8 @@ class RNet(MLPBase):
         if self.final_layer == "exp":
             out = torch.exp(out)
         elif self.final_layer == "sum":
-            out = torch.sum(out,dim=self.sum_dim)
-            
+            out = torch.sum(out, dim=self.sum_dim)
+
         return out
 
     # def getParams(self):
@@ -188,11 +229,13 @@ class RNet(MLPBase):
     #         self.paramsw = paramsw
     #         assert(paramsb is None)
 
+
 ########################################################################
 ########################################################################
 ########################################################################
 
-class LayerFcn():
+
+class LayerFcn:
     """Base class for layer weight parameterization layer functions.
 
     Attributes:
@@ -201,7 +244,7 @@ class LayerFcn():
 
     def __init__(self):
         """Instantiation."""
-        self.npar=None
+        self.npar = None
 
     def __call__(self, pars, t):
         """Call signature.
@@ -213,6 +256,7 @@ class LayerFcn():
             NotImplementedError: Need to implement it in children.
         """
         raise NotImplementedError
+
 
 class Const(LayerFcn):
     """Constant weight parameterization.
@@ -236,7 +280,7 @@ class Const(LayerFcn):
         Returns:
             torch.nn.Parameter: Constant (independent of `t`).
         """
-        assert(len(pars) == self.npar)
+        assert len(pars) == self.npar
         return pars[0]
 
 
@@ -246,6 +290,7 @@ class Lin(LayerFcn):
     Attributes:
         npar (int): Number of parameters. Should be 2.
     """
+
     def __init__(self):
         """Instantiation."""
         super().__init__()
@@ -261,7 +306,7 @@ class Lin(LayerFcn):
         Returns:
             torch.nn.Parameter: Linear in `t`.
         """
-        assert(len(pars) == self.npar)
+        assert len(pars) == self.npar
         return pars[0] + pars[1] * t
 
 
@@ -271,6 +316,7 @@ class Quad(LayerFcn):
     Attributes:
         npar (int): Number of parameters. Should be 3.
     """
+
     def __init__(self):
         """Instantiation."""
         super().__init__()
@@ -286,8 +332,9 @@ class Quad(LayerFcn):
         Returns:
             torch.nn.Parameter: Quadratic in `t`.
         """
-        assert(len(pars) == self.npar)
+        assert len(pars) == self.npar
         return pars[0] + pars[1] * t + pars[2] * t**2
+
 
 class Cubic(LayerFcn):
     """Cubic weight parameterization.
@@ -295,6 +342,7 @@ class Cubic(LayerFcn):
     Attributes:
         npar (int): Number of parameters. Should be 4.
     """
+
     def __init__(self):
         """Instantiation."""
         super().__init__()
@@ -310,8 +358,9 @@ class Cubic(LayerFcn):
         Returns:
             torch.nn.Parameter: Cubic in `t`.
         """
-        assert(len(pars) == self.npar)
+        assert len(pars) == self.npar
         return pars[0] + pars[1] * t + pars[2] * t**2 + pars[3] * t**3
+
 
 class Poly(LayerFcn):
     """Polynomial weight parameterization.
@@ -319,6 +368,7 @@ class Poly(LayerFcn):
     Attributes:
         npar (int): Number of parameters.
     """
+
     def __init__(self, order):
         """Instantiation.
 
@@ -326,7 +376,7 @@ class Poly(LayerFcn):
             order (int): Order of the polynomial.
         """
         super().__init__()
-        self.npar = order+1
+        self.npar = order + 1
 
     def __call__(self, pars, t):
         """Call function.
@@ -338,12 +388,13 @@ class Poly(LayerFcn):
         Returns:
             torch.nn.Parameter: Polynomial in `t`.
         """
-        assert(len(pars) == self.npar)
+        assert len(pars) == self.npar
 
         val = 0.0
         for i in range(self.npar):
-            val += pars[i]*t**i
+            val += pars[i] * t**i
         return val
+
 
 class NonPar(LayerFcn):
     """Non-parameteric weight parameterization, i.e. regular ResNet without weight parameterization.
@@ -351,6 +402,7 @@ class NonPar(LayerFcn):
     Attributes:
         npar (int): Number of parameters.
     """
+
     def __init__(self, npar):
         """Instantiation.
 
@@ -371,7 +423,6 @@ class NonPar(LayerFcn):
             torch.nn.Parameter: Non-parameteric: a new parameter per `t` value (i.e. per layer).
         """
 
-        #print(len(pars), self.npar, t, t * self.npar, int(t * self.npar))
-        assert(len(pars) == self.npar)
+        # print(len(pars), self.npar, t, t * self.npar, int(t * self.npar))
+        assert len(pars) == self.npar
         return pars[int(t * self.npar)]
-

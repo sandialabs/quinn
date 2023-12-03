@@ -5,9 +5,10 @@
 import math
 import torch
 
+
 class Gaussian(torch.nn.Module):
-    r"""Gaussian function. :math:`\textrm{Gaussian}(x) = e^{-x^2}`
-    """
+    r"""Gaussian function. :math:`\textrm{Gaussian}(x) = e^{-x^2}`"""
+
     def __init__(self):
         """Initialization."""
         super().__init__()
@@ -21,11 +22,12 @@ class Gaussian(torch.nn.Module):
         Returns:
             torch.Tensor: Output tensor of same size as input `x`.
         """
-        return torch.exp(-x**2)
+        return torch.exp(-(x**2))
 
 
 class Sine(torch.nn.Module):
     r"""Sine function. :math:`\textrm{Sin}(x) = A\sin\left(2\pi x/T\right)`"""
+
     def __init__(self, A=1.0, T=1.0):
         """Initialization.
 
@@ -47,7 +49,7 @@ class Sine(torch.nn.Module):
             torch.Tensor: Output tensor of same size as input `x`.
         """
 
-        return torch.sin(self.A*torch.Tensor(math.pi)*x/self.T)
+        return torch.sin(self.A * torch.Tensor(math.pi) * x / self.T)
 
 
 class Polynomial(torch.nn.Module):
@@ -67,7 +69,7 @@ class Polynomial(torch.nn.Module):
         super().__init__()
         self.order = order
 
-        self.coefs= torch.nn.Parameter(torch.randn((self.order+1,)))
+        self.coefs = torch.nn.Parameter(torch.randn((self.order + 1,)))
 
         # Parameter List does not work with quinn.vi.vi
         # self.coefs= torch.nn.ParameterList([torch.nn.Parameter(torch.randn(())) for i in range(self.order+1)])
@@ -82,10 +84,9 @@ class Polynomial(torch.nn.Module):
             torch.Tensor: Output tensor of same size as input `x`.
         """
 
-
         val = torch.zeros_like(x)
         for i, cf in enumerate(self.coefs):
-            val += cf*x**i
+            val += cf * x**i
 
         return val
 
@@ -101,8 +102,7 @@ class Polynomial3(torch.nn.Module):
     """
 
     def __init__(self):
-        """Instantiate four parameters.
-        """
+        """Instantiate four parameters."""
         super().__init__()
         self.a = torch.nn.Parameter(torch.randn(()))
         self.b = torch.nn.Parameter(torch.randn(()))
@@ -118,7 +118,8 @@ class Polynomial3(torch.nn.Module):
         Returns:
             torch.Tensor: Output tensor of same size as input `x`.
         """
-        return self.a + self.b * x + self.c * x ** 2 + self.d * x ** 3
+        return self.a + self.b * x + self.c * x**2 + self.d * x**3
+
 
 class Constant(torch.nn.Module):
     r"""Constant function :math:`\textrm{Constant}(x)=C`.
@@ -145,10 +146,10 @@ class Constant(torch.nn.Module):
 
 
 class SiLU(torch.nn.Module):
-    r"""Sigmoid Linear Unit (SiLU) function :math:`\textrm{SiLU}(x) = x \sigma(x) = \frac{x}{1+e^{-x}}`
-    """
+    r"""Sigmoid Linear Unit (SiLU) function :math:`\textrm{SiLU}(x) = x \sigma(x) = \frac{x}{1+e^{-x}}`"""
+
     def __init__(self):
-        """Initialization. """
+        """Initialization."""
         super().__init__()
 
     def forward(self, x):
@@ -162,14 +163,16 @@ class SiLU(torch.nn.Module):
         """
         return x * torch.sigmoid(x)
 
+
 # create a class wrapper from PyTorch nn.Module, so
 # the function now can be easily used in models
 class Expon(torch.nn.Module):
-    r"""Exponential function :math:`\textrm{Expon}(x) = e^{x}`
-    """
+    r"""Exponential function :math:`\textrm{Expon}(x) = e^{x}`"""
+
     def __init__(self):
-        """Initialization. """
+        """Initialization."""
         super().__init__()
+
     def forward(self, x):
         """Forward function.
 
@@ -180,6 +183,7 @@ class Expon(torch.nn.Module):
             torch.Tensor: Output tensor of same size as input `x`.
         """
         return torch.exp(x)
+
 
 class TwoLayerNet(torch.nn.Module):
     """Example two-layer function, with a cubic polynomical between layers.
@@ -241,15 +245,15 @@ class MLP_simple(torch.nn.Module):
             biasorno (bool, optional): Whether to use bias or not. Defaults to True.
         """
         super().__init__()
-        assert(len(hls)>1)
+        assert len(hls) > 1
         self.hls = hls[1:-1]
         self.indim = hls[0]
         self.outdim = hls[-1]
         self.biasorno = biasorno
 
         modules = []
-        for j in range(len(hls)-2):
-            modules.append(torch.nn.Linear(hls[j], hls[j+1], self.biasorno))
+        for j in range(len(hls) - 2):
+            modules.append(torch.nn.Linear(hls[j], hls[j + 1], self.biasorno))
             modules.append(torch.nn.Tanh())
         modules.append(torch.nn.Linear(hls[-2], hls[-1], bias=self.biasorno))
 
@@ -266,5 +270,3 @@ class MLP_simple(torch.nn.Module):
         """
 
         return self.model(x)
-
-

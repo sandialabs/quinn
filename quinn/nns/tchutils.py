@@ -157,7 +157,9 @@ def nnfit(
     if loss_xy is None:
 
         def loss_xy(x, y):
-            return loss(nnmodel(x), y)
+            loss_cur = loss(nnmodel(x), y)
+            loss_cur.requires_grad = True
+            return loss_cur
 
     # Optimizer selection
     if optimizer == "adam":

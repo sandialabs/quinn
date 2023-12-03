@@ -39,30 +39,24 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
         """
         if requires_grad:
             predictions = model(input)  # , type_="torch")
-
             part1 = (
                 0.5 * torch.sum(torch.pow(target - predictions, 2)) / self.sigma**2
             )
-
             part2 = (len(input) / 2) * torch.log(
                 2 * torch.Tensor(self.pi) * self.sigma**2
             )
-
             return -part1 - part2
         else:
             with torch.no_grad():
                 predictions = model(input)  # , type_="torch")
-
                 part1 = (
                     0.5
                     * torch.sum(torch.pow(target - predictions, 2))
                     / self.sigma**2
                 )
-
                 part2 = (len(input) / 2) * torch.log(
                     2 * torch.Tensor(self.pi) * self.sigma**2
                 )
-
             return -part1 - part2
 
 
@@ -84,7 +78,6 @@ class Gaussian_prior(torch.nn.Module):
             - n_params: number of parameters being sampled. Type: int.
         """
         super().__init__()
-
         self.sigma = sigma
         self.n_params = n_params
         self.pi = tch(np.pi, rgrad=False)
@@ -102,30 +95,22 @@ class Gaussian_prior(torch.nn.Module):
         """
         if requires_grad:
             loss = 0
-
             for p in model.parameters():
                 loss += torch.sum(torch.pow(p, 2))
-
             loss = loss / 2 / self.sigma**2
-
             loss += (self.n_params / 2) * torch.log(
                 2 * torch.Tensor(self.pi) * self.sigma**2
             )
-
             return -loss
         else:
             with torch.no_grad():
                 loss = 0
-
                 for p in model.parameters():
                     loss += torch.sum(torch.pow(p, 2))
-
                 loss = loss / 2 / self.sigma**2
-
                 loss += (self.n_params / 2) * torch.log(
                     2 * torch.Tensor(self.pi) * self.sigma**2
                 )
-
             return -loss
 
 
@@ -148,7 +133,6 @@ class Log_Posterior(torch.nn.Module):
             parameters. Type: torch.nn.Module
         """
         super().__init__()
-
         self.likelihood_fn = likelihood_fn
         self.prior_fn = prior_fn
 
@@ -169,7 +153,6 @@ class Log_Posterior(torch.nn.Module):
         target = tch(target, rgrad=False)
         likelihood = self.likelihood_fn(model, input, target, requires_grad)
         prior = self.prior_fn(model, requires_grad)
-
         return likelihood + prior
 
 
@@ -192,7 +175,6 @@ class NegLogPosterior(torch.nn.Module):
             parameters. Type: torch.nn.Module.
         """
         super().__init__()
-
         self.likelihood_fn = likelihood_fn
         self.prior_fn = prior_fn
 
@@ -212,5 +194,4 @@ class NegLogPosterior(torch.nn.Module):
         """
         loss = self.likelihood_fn(model, input, target, requires_grad=requires_grad)
         loss += self.prior_fn(model, requires_grad=requires_grad)
-
         return -loss

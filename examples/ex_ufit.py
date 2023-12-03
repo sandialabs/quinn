@@ -10,6 +10,7 @@ from quinn.mcmc.hmc import HMC_NN
 from quinn.vi.vi import VI_NN
 from quinn.ens.ens import Ens_NN
 from quinn.ens.swag import SWAG_NN
+from quinn.ens.laplace import LAPLACE_NN
 from quinn.nns.posterior_funcs import (
     Gaussian_likelihood_assumed_var,
     Gaussian_prior,
@@ -145,14 +146,14 @@ def main():
             nepochs=5000,
         )
     elif meth == "ens":
-        nmc = 3
+        nmc = 10
         uqnet = Ens_NN(nnet, nens=nmc, dfrac=0.8, verbose=True)
-        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
+        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=500)
     elif meth == "swag":
         """
         This example uses
         """
-        nens = 3
+        nens = 8
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=3, n_params=param_dim)
@@ -162,11 +163,36 @@ def main():
             neg_logposterior,
             param_dim,
             nens=nens,
+            learn_rate_swag=2e-6,
             dfrac=0.8,
             verbose=True,
-            n_steps=100,
+            n_steps=12,
         )
-        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=1000)
+        uqnet.fit_swag(
+            xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=20, nepochs=500
+        )
+
+    elif meth == "la":
+        """
+        This example uses
+        """
+        nens = 8
+        nnet = NNWrap_Torch(nnet)
+        likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
+        prior = Gaussian_prior(sigma=3, n_params=param_dim)
+        neg_logposterior = NegLogPosterior(likelihood, prior)
+        uqnet = LAPLACE_NN(
+            nnet,
+            neg_logposterior,
+            param_dim,
+            nens=nens,
+            dfrac=0.8,
+            verbose=False,
+            la_type="full",
+        )
+        uqnet.fit_la(
+            xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=500
+        )
 
     else:
         print(f"UQ Method {meth} is unknown. Exiting.")
