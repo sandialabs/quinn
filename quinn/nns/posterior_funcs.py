@@ -59,6 +59,50 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
                 )
             return -part1 - part2
 
+    def forward_pointwise(self, model, input, target, requires_grad=False):
+        """
+        Args:
+            - model: model from which the parameters are taken. Type: NNWrap
+            class.
+            - input: model inputs. Type: numpy.ndarray.
+            - targets: target predictions. Type: numpy.ndarray.
+            - requires_grad: determines whether pytorch should expect to
+            compute. Type: bool.
+            - gradients in a given evaluation. Type: bool.
+        ----------
+        Returns:
+            - Loss tensor. Type: torch.Tensor.
+        """
+        if requires_grad:
+            predictions = model(input)  # , type_="torch")
+            part1 = (
+                0.5
+                * torch.sum(
+                    torch.pow(target - predictions, 2),
+                    dim=tuple(torch.arange(1, len(target.size()), dtype=int)),
+                )
+                / self.sigma**2
+            )
+            part2 = (len(input) / 2) * torch.log(
+                2 * torch.Tensor(self.pi) * self.sigma**2
+            )
+            return -part1 - part2
+        else:
+            with torch.no_grad():
+                predictions = model(input)  # , type_="torch")
+                part1 = (
+                    0.5
+                    * torch.sum(
+                        torch.pow(target - predictions, 2),
+                        dim=tuple(torch.arange(1, len(target.size()), dtype=int)),
+                    )
+                    / self.sigma**2
+                )
+                part2 = (len(input) / 2) * torch.log(
+                    2 * torch.Tensor(self.pi) * self.sigma**2
+                )
+                return -part1 - part2
+
 
 class Gaussian_prior(torch.nn.Module):
     """Calculates the probability of the parameters given a Gaussian prior.
@@ -194,4 +238,5 @@ class NegLogPosterior(torch.nn.Module):
         """
         loss = self.likelihood_fn(model, input, target, requires_grad=requires_grad)
         loss += self.prior_fn(model, requires_grad=requires_grad)
+
         return -loss

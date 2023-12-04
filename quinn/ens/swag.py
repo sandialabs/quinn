@@ -11,6 +11,16 @@ from ..nns.tchutils import npy, tch
 
 
 def nnfit_1epoch(nnmodel, xtrn, ytrn, loss_fn, batch_size, optimizer):
+    """
+    Given an optimized model, this function optimizes the model for
+    one epoch.
+    Args:
+        - nnmodel (NNWraper_Torch): model to be optmized.
+        - xtrn (np.ndarray): input part of the training data.
+        - ytrn (np.ndarray): target part of the training data.
+        - batch_size (int): batch size used in the swag covariance estimation.
+        - optimizer (torch optimizer): optimizer to use in the optimization.
+    """
     try:
         device = nnmodel.device
     except AttributeError:
@@ -40,10 +50,25 @@ class SWAG_NN(Ens_NN):
     information processing systems, 32.
 
     Attributes:
-        nens (int): Number of ensemble members.
-        learners (list[Learner]): List of learners.
-        dfrac (float): Fraction of data each learner sees.
-        verbose (bool): Verbose or not.
+        - ndim (int): Number of model parameters.
+        - learn_rate_swag (float, optional): Learning rate of the sampling for swag
+        calcs. Defaults to 1e-5.
+        - optim_swag (string): Optimizer type to use for the sampling for swag calcs.
+        Options are: sgd.
+        - n_steps (int): number of steps to consider in the sampling for swag calcs.
+        - c (int): moment update frequency (sampling for swag).
+        - k (int): max columns in deviation matrix  (swag).
+        - loss_func : Loss function over which the mode is optimized. I takes, a NN model,
+        x and y data, and requires_grad as input.
+        - cov_type (string): type of covariance matrix approximation. Default is lowrank.
+        Options are lowrank and diagonal.
+        - means (list of np.ndarrays): list of means of the posterior over each member of the
+        ensemble.
+        - cov_diags (list of np.ndarrays): list of diagnoals of the covariance of the
+        posterior over each member of the ensemble.
+        - d_mats (list of np.ndarrays): np.ndarrays storing the low rank approximation
+        of the covariance matrix (shape: (ndim x k)). Covariance matrix = d_mat*d_mat.T.
+        - verbose (bool): Verbose or not.
     """
 
     def __init__(
@@ -58,31 +83,39 @@ class SWAG_NN(Ens_NN):
         n_steps=0,
         c=1,
         k=10,
-        s=20,
-        optimizer="sgd",
         cov_type="lowrank",
         verbose=False,
     ):
         """Initialization.
 
         Args:
-            nnmodel (torch.nn.Module): NNWrapper class.
-            nens (int, optional): Number of ensemble members. Defaults to 1.
-            dfrac (float, optional): Fraction of data for each learner. Defaults to 1.0.
-            verbose (bool, optional): Verbose or not.
+            - nnmodel (torch.nn.Module): NNWrapper class.
+            - loss_func : Loss function over which the mode is optimized. I takes, a NN model,
+            x and y data, and requires_grad as input.
+            - ndim (int): Number of model parameters.
+            - nens (int, optional): Number of ensemble members. Defaults to 1.
+            - dfrac (float, optional): Fraction of data for each learner. Defaults to 1.0.
+            - learn_rate_swag (float, optional): Learning rate of the sampling for swag
+            calcs. Defaults to 1e-5.
+            - optim_swag (string): Optimizer type to use for the sampling for swag calcs.
+            Options are: sgd.
+            - n_steps (int): number of steps to consider in the sampling for swag calcs.
+            - c (int): moment update frequency (sampling for swag).
+            - k (int): max columns in deviation matrix  (swag).
+            - cov_type (string): type of covariance matrix approximation.
+            - verbose (bool, optional): Verbose or not.
         """
-        super().__init__(nnmodel, nens=nens, dfrac=dfrac, verbose=verbose)
-        self.type_ens = "swag"
+        super().__init__(
+            nnmodel, nens=nens, dfrac=dfrac, type_ens="swag", verbose=verbose
+        )
         self.ndim = ndim
         self.learn_rate_swag = learn_rate_swag
         self.optim_swag = optim_swag
         self.nsteps = n_steps
         self.c = c
         self.k = k
-        self.s = s
         self.loss_func = loss_func
         self.cov_type = cov_type
-        self.optimizer = optimizer
         self.means = []
         self.cov_diags = []
         self.d_mats = []
@@ -94,6 +127,12 @@ class SWAG_NN(Ens_NN):
         """
         Given an optimized model, this method stores in the corresponding lists
         the vectors and matrices defining the SWAG posterior.
+        Args:
+            - learner (Learner class): Instance of the Learner class including the model
+            (torch.nn.Module) being analysed.
+            - xtrn (np.ndarray): input part of the training data.
+            - ytrn (np.ndarray): target part of the training data.
+            - batch_size (int): batch size used in the swag covariance estimation.
         """
         moment_1st = npy(learner.nnmodel.p_flatten())
         moment_2nd = np.power(npy(learner.nnmodel.p_flatten()), 2)
@@ -130,6 +169,15 @@ class SWAG_NN(Ens_NN):
             self.d_mats.append(np.squeeze(d_mat))
 
     def fit_swag(self, xtrn, ytrn, **kwargs):
+        """
+        This methods optimizes the models and then calculates the swag posterior for
+        each of them
+        Args:
+            - xtrn (np.ndarray): input part of the training data.
+            - ytrn (np.ndarray): target part of the training data.
+            - kwargs: they must include batch_size. Other arguments are to be used
+            by the nnfit function.
+        """
         self.fit(xtrn, ytrn, loss_fn="logposterior", loss=self.loss_func, **kwargs)
         for jens in range(self.nens):
             self.swag_calc(self.learners[jens], xtrn, ytrn, kwargs["batch_size"])

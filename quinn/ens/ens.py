@@ -17,7 +17,7 @@ class Ens_NN(QUiNNBase):
         verbose (bool): Verbose or not.
     """
 
-    def __init__(self, nnmodel, nens=1, dfrac=1.0, verbose=False):
+    def __init__(self, nnmodel, nens=1, dfrac=1.0, type_ens="ens", verbose=False):
         """Initialization.
 
         Args:
@@ -30,7 +30,7 @@ class Ens_NN(QUiNNBase):
         self.verbose = verbose
         self.nens = nens
         self.dfrac = dfrac
-        self.type_ens = "ens"
+        self.type_ens = type_ens
         self.learners = []
         for i in range(nens):
             self.learners.append(Learner(nnmodel))

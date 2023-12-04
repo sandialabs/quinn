@@ -153,7 +153,7 @@ def main():
         """
         This example uses
         """
-        nens = 8
+        nens = 4
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=3, n_params=param_dim)
@@ -176,7 +176,6 @@ def main():
         """
         This example uses
         """
-        nens = 8
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=3, n_params=param_dim)
@@ -184,11 +183,10 @@ def main():
         uqnet = LAPLACE_NN(
             nnet,
             neg_logposterior,
-            param_dim,
-            nens=nens,
+            nens=4,
             dfrac=0.8,
             verbose=False,
-            la_type="full",
+            la_type="diag",
         )
         uqnet.fit_la(
             xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=500
