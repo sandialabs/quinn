@@ -99,8 +99,11 @@ def nnwrapper(x, nnmodel):
     Returns:
         np.ndarray: An output numpy array of size `(N,o)`.
     """
-    device = self.nnmodel.device 
-    return npy(nnmodel.forward(tch(x,device=device)))
+    try:
+        device = nnmodel.device
+    except AttributeError:
+        device = 'cpu'
+    return npy(nnmodel.forward(tch(x,device=device, rgrad=False)))
 
 
 def nn_surrogate(x, *otherpars):

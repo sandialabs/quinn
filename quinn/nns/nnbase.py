@@ -229,3 +229,14 @@ class MLPBase(torch.nn.Module):
                 plt.savefig('fit_d' + str(idim) + '_o' + str(iout) + '.png')
                 plt.clf()
 
+############################################################
+############################################################
+############################################################
+
+class SNet(MLPBase):
+    def __init__(self, nnmodel, indim, outdim, device='cpu'):
+        super().__init__(indim, outdim, device=device)
+        self.nnmodel = nnmodel
+
+    def forward(self, x):
+        return self.nnmodel(x)
