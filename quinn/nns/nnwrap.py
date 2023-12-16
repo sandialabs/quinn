@@ -262,7 +262,7 @@ class NNWrap_Torch(torch.nn.Module):
             - target (numpy.ndarray): targets of the output of the model.
         ---------
         Returns:
-            -loss (torch.Tensor): loss of the model given the data.
+            -loss (float): loss of the model given the data.
         """
         input = tch(input, rgrad=False)
         targets = tch(targets, rgrad=False)
@@ -271,7 +271,8 @@ class NNWrap_Torch(torch.nn.Module):
         return loss.item()
 
     def calc_grad_wrt_loss(self, weights, loss_fn, input, targets):
-        """Calculates the loss given a loss function.
+        """Calculates the gradients of the loss given a loss function w.r.t. the
+        model parameters.
         ----------
         Args:
             - weights (numpy.ndarray): weights of the model.

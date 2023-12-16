@@ -71,7 +71,7 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
             - gradients in a given evaluation. Type: bool.
         ----------
         Returns:
-            - Loss tensor. Type: torch.Tensor.
+            - Loss tensor pointwise (per data point). Type: torch.Tensor.
         """
         if requires_grad:
             predictions = model(input)  # , type_="torch")
@@ -158,7 +158,80 @@ class Gaussian_prior(torch.nn.Module):
             return -loss
 
 
-class Log_Posterior(torch.nn.Module):
+class RMS_gaussian_prior(torch.nn.Module):
+    """Calculates the probability of the parameters given a Gaussian prior.
+    ----------
+    Attributes:
+        - sigma: the standard deviation of the gaussian prior (same for all
+        parameters). Type: float.
+        - n_params: number of parameters being sampled. Type: int.
+        - pi: number pi. Type: torch.Tensor.
+    """
+
+    def __init__(self, sigma, n_params):
+        """
+        Args:
+            - sigma: the standard deviation of the gaussian prior (same for
+            all parameters). Type: float.
+            - n_params: number of parameters being sampled. Type: int.
+        """
+        super().__init__()
+        self.sigma = sigma
+        self.n_params = n_params
+        self.pi = tch(np.pi, rgrad=False)
+        self.anchor = np.zeros(n_params)
+
+    def sample_anchor(self):
+        """Samples an anchor vector to calculate the prior over the parameters.
+        --------
+        Assigns a vector (numpy.ndarray) sampled from a multivariate gaussian
+        distribution with diagonal covariance and uniform value along the
+        diagonal.
+        """
+        self.anchor = tch(np.random.normal(scale=self.sigma, size=(self.n_params,)))
+
+    def forward(self, model, requires_grad=False):
+        """
+        Args:
+            - model: model from which the parameters are taken. Type:
+            NNWrap class
+            - requires_grad: determines whether pytorch should expect to
+            compute gradients in a given evaluation. Type: bool.
+        ----------
+        Returns:
+            - Loss tensor. Type: torch.Tensor.
+        """
+        if requires_grad:
+            loss = 0
+            i = 0
+            for p in model.parameters():
+                cur_len = p.flatten().size()[0]
+                loss += torch.sum(
+                    torch.pow(p.flatten() - self.anchor[i : i + cur_len], 2)
+                )
+                i += cur_len
+            loss = loss / 2 / self.sigma**2
+            loss += (self.n_params / 2) * torch.log(
+                2 * torch.Tensor(self.pi) * self.sigma**2
+            )
+            return -loss
+        else:
+            with torch.no_grad():
+                loss = 0
+                for p in model.parameters():
+                    cur_len = p.flatten().size()[0]
+                    loss += torch.sum(
+                        torch.pow(p.flatten() - self.anchor[i : i + cur_len], 2)
+                    )
+                    i += cur_len
+                loss = loss / 2 / self.sigma**2
+                loss += (self.n_params / 2) * torch.log(
+                    2 * torch.Tensor(self.pi) * self.sigma**2
+                )
+            return -loss
+
+
+class Log_Posterior_Assumed_Variance(torch.nn.Module):
     """Used to calculate the log posterior .
     ----------
     Attributes:
@@ -200,7 +273,7 @@ class Log_Posterior(torch.nn.Module):
         return likelihood + prior
 
 
-class NegLogPosterior(torch.nn.Module):
+class NegLogPosterior_Assumed_Variance(torch.nn.Module):
     """Used to calculate the U (potential energy) component of the hamiltonian.
     ----------
     Attributes:

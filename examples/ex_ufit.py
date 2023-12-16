@@ -11,11 +11,13 @@ from quinn.vi.vi import VI_NN
 from quinn.ens.ens import Ens_NN
 from quinn.ens.swag import SWAG_NN
 from quinn.ens.laplace import LAPLACE_NN
+from quinn.ens.rms import RMS_NN
 from quinn.nns.posterior_funcs import (
     Gaussian_likelihood_assumed_var,
     Gaussian_prior,
-    Log_Posterior,
-    NegLogPosterior,
+    RMS_gaussian_prior,
+    Log_Posterior_Assumed_Variance,
+    NegLogPosterior_Assumed_Variance,
 )
 from quinn.nns.nnwrap import NNWrap_Torch, NNWrap
 
@@ -116,7 +118,7 @@ def main():
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=100, n_params=param_dim)
-        log_posterior = Log_Posterior(likelihood, prior)
+        log_posterior = Log_Posterior_Assumed_Variance(likelihood, prior)
         amcmc = AMCMC()
         amcmc.setParams(log_posterior, cov_ini=None, nmcmc=20000, gamma=0.01)
         uqnet = MCMC_NN(nnet, verbose=True, sampler=amcmc, log_post=log_posterior)
@@ -126,8 +128,8 @@ def main():
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=100, n_params=param_dim)
-        log_posterior = Log_Posterior(likelihood, prior)
-        u_hmc = NegLogPosterior(likelihood, prior)
+        log_posterior = Log_Posterior_Assumed_Variance(likelihood, prior)
+        u_hmc = NegLogPosterior_Assumed_Variance(likelihood, prior)
         sampling_params = {"epsilon": 0.0025, "L_steps": 3}
         hmc = HMC_NN(u_hmc, sampling_params, nmcmc=20000, nburning=0)
         uqnet = MCMC_NN(nnet, verbose=True, sampler=hmc, log_post=log_posterior)
@@ -157,7 +159,7 @@ def main():
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=3, n_params=param_dim)
-        neg_logposterior = NegLogPosterior(likelihood, prior)
+        neg_logposterior = NegLogPosterior_Assumed_Variance(likelihood, prior)
         uqnet = SWAG_NN(
             nnet,
             neg_logposterior,
@@ -179,7 +181,7 @@ def main():
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=3, n_params=param_dim)
-        neg_logposterior = NegLogPosterior(likelihood, prior)
+        neg_logposterior = NegLogPosterior_Assumed_Variance(likelihood, prior)
         uqnet = LAPLACE_NN(
             nnet,
             neg_logposterior,
@@ -191,6 +193,22 @@ def main():
         uqnet.fit_la(
             xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=500
         )
+    elif meth == "rms":
+        """
+        This example uses
+        """
+        nnet = NNWrap_Torch(nnet)
+        likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
+        prior = RMS_gaussian_prior(sigma=3, n_params=param_dim)
+        neg_logposterior = NegLogPosterior_Assumed_Variance(likelihood, prior)
+        uqnet = RMS_NN(
+            nnet,
+            neg_logposterior,
+            nens=10,
+            dfrac=0.8,
+            verbose=False,
+        )
+        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=500)
 
     else:
         print(f"UQ Method {meth} is unknown. Exiting.")

@@ -238,8 +238,8 @@ def diag_hessian(model, weigths_map, loss_func, x_train, y_train):
 
 def kfac_hessian(model, weigths_map, loss_func, x_train, y_train):
     """
-    Calculates the lowrank hessian of the loss. To be implemented taking the
-    following papers into account:
+    Calculates the Kronecker-factor Approximate Curvature hessian of the loss.
+    To be implemented taking the following papers into account:
     Aleksandaer Botev, Hippolyt Ritter, David Barber. Practrical Gauss-Newton
     Optimisation for Deep Learining. Proceedings of the 34th International
     Conference on Machine Learning.
