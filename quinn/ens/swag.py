@@ -170,8 +170,8 @@ class SWAG_NN(Ens_NN):
 
     def fit_swag(self, xtrn, ytrn, **kwargs):
         """
-        This methods optimizes the models and then calculates the swag posterior for
-        each of them
+        This method optimizes the models and then calculates the swag posterior for
+        each of them.
         Args:
             - xtrn (np.ndarray): input part of the training data.
             - ytrn (np.ndarray): target part of the training data.

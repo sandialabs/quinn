@@ -36,6 +36,7 @@ class RNet(MLPBase):
         paramsw (list[torch.nn.Parameter]): List of Resnet weight matrices.
         paramsb (list[torch.nn.Parameter]): List of Resnet bias vectors.
         device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
+        dropout (float): Dropout fraction.
     """
 
     def __init__(
@@ -54,6 +55,7 @@ class RNet(MLPBase):
         device="cpu",
         init_factor=1,
         sum_dim=1,
+        dropout=0.0,
     ):
         """Instantiate ResNet object.
 
@@ -72,6 +74,7 @@ class RNet(MLPBase):
             sum_dim (int, optional): If final layer function is sum, it will select i which dimension to perform sum. Defaults to 1
             device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
             init_factor(int): Multiply initial condition tensors by factor.
+            dropout (float): Dropout fraction. Default is 0.0.
         """
         super().__init__(indim, outdim, device=device)
         if self.indim is None:
@@ -113,6 +116,8 @@ class RNet(MLPBase):
                 * (2.0 * torch.rand(self.rdim) - 1.0)
                 / math.sqrt(self.indim)
             )
+            if dropout > 0.0:
+                self.dropout_pre = torch.nn.Dropout(p=dropout)
 
         if self.layer_post:
             self.weight_post = torch.nn.Parameter(
@@ -125,6 +130,8 @@ class RNet(MLPBase):
                 * (2.0 * torch.rand(self.outdim) - 1.0)
                 / math.sqrt(self.rdim)
             )
+            if dropout > 0.0:
+                self.dropout_post = torch.nn.Dropout(p=dropout)
 
         pars_w = []
         for ip in range(self.wp_function.npar):
@@ -156,6 +163,12 @@ class RNet(MLPBase):
             self.activ = torch.nn.Tanh()
         else:
             self.activ = torch.nn.Identity()
+        if dropout > 0.0:
+            self.dropout_layers_in = []
+            for _ in range(self.nlayers + 1):
+                self.dropout_layers_in.append(torch.nn.Dropout(p=dropout))
+        else:
+            self.dropout_layer = None
 
         self.to(device)
 
@@ -172,6 +185,8 @@ class RNet(MLPBase):
 
         # Note that the prelayer has activation, too, to avoid two linear layers in succession
         if self.layer_pre:
+            if self.dropout_pre:
+                out = self.dropout_pre(out)
             out = self.activ(F.linear(out, self.weight_pre, self.bias_pre))
 
         paramsw = [
@@ -188,13 +203,16 @@ class RNet(MLPBase):
                 bias = self.wp_function(paramsb, self.step_size * i)
             else:
                 bias = None
-
+            if self.dropout_layers_in:
+                out = self.dropout_layers_in[i](out)
             if self.mlp:
                 out = self.activ(F.linear(out, weight, bias))
             else:
                 out = out + self.step_size * self.activ(F.linear(out, weight, bias))
 
         if self.layer_post:
+            if self.dropout_post:
+                out = self.dropout_post(out)
             out = F.linear(out, self.weight_post, self.bias_post)
         if self.final_layer == "exp":
             out = torch.exp(out)

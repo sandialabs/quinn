@@ -16,7 +16,7 @@ class LAPLACE_NN(Ens_NN):
     Ritter, H., Izmailov, Botev A., Barber D. A Scalable Laplace Approximation For
     Neural Networks, 2018. ICLR Conference.
     Attributes:
-        - loss_func : Loss function over which the mode is optimized. I takes,
+        - loss_func : Loss function over which the mode is optimized. It takes,
         a NN model, x and y data, and requires_grad as input.
         - la_type (string): type of covariance matrix approximation. Default
         is full. Options are full, kfac and diag.
@@ -40,7 +40,7 @@ class LAPLACE_NN(Ens_NN):
     ):
         """Initialization.
         Args:
-            nnmodel (torch.nn.Module): NNWrapper class.
+            - nnmodel (torch.nn.Module): NNWrapper class.
             - loss_func : Loss function over which the mode is optimized. I takes,
             a NN model, x and y data, and requires_grad as input.
             - nens (int, optional): Number of ensemble members. Defaults to 1.
@@ -79,7 +79,7 @@ class LAPLACE_NN(Ens_NN):
             (torch.nn.Module) being analysed.
             - xtrn (np.ndarray): input part of the training data.
             - ytrn (np.ndarray): target part of the training data.
-            - batch_size (int): batch size used in the swag covariance estimation.
+            - batch_size (int): batch size used in the hessian estimation.
             Defaults to None.
         """
         weights_map = learner.nnmodel.p_flatten().detach().squeeze().numpy()

@@ -124,10 +124,10 @@ class NNWrap_Torch(torch.nn.Module):
     (given the model parameters, loss function (nn.Module) and data points).
 
     Attributes:
-        - nnmodel: The original PyTorch NN module. Type: torch.nn.Module.
-        - indices: List containing [start index, end index) for each
+        - nnmodel (torch.nn.Module): The original PyTorch NN module.
+        - indices (list): List containing [start index, end index) for each
         model parameter. Useful for flattening/unflattening of parameter
-        arrays. Type: list.
+        arrays.
     """
 
     def __init__(self, nnmodel):
@@ -151,8 +151,6 @@ class NNWrap_Torch(torch.nn.Module):
         ----------
         Args:
             - x (np.ndarray): A numpy input array of size `(N,d)`.
-            - type: indicates whether the output should be a numpy array or sa
-            torch tensor.
         ----------
         Returns:
             - torch.Tensor: `(N,o)`.
@@ -169,8 +167,6 @@ class NNWrap_Torch(torch.nn.Module):
         ----------
         Args:
             - x (np.ndarray): A numpy input array of size `(N,d)`.
-            - type: indicates whether the output should be a numpy array or sa
-            torch tensor.
         ----------
         Returns:
             - np.ndarray: A numpy output array of size `(N,o)`.
@@ -235,6 +231,7 @@ class NNWrap_Torch(torch.nn.Module):
         ----------
         Args:
             - x (np.ndarray): A numpy input array of size `(N,d)`.
+            - weights (np.ndarray): flattened parameter vector.
         ----------
         Returns:
             - np.ndarray: A numpy output array of size `(N,o)`.

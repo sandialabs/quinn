@@ -26,16 +26,14 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
     def forward(self, model, input, target, requires_grad=False):
         """
         Args:
-            - model: model from which the parameters are taken. Type: NNWrap
-            class.
-            - input: model inputs. Type: numpy.ndarray.
-            - targets: target predictions. Type: numpy.ndarray.
-            - requires_grad: determines whether pytorch should expect to
-            compute. Type: bool.
-            - gradients in a given evaluation. Type: bool.
+            - model (NNWrap/NNWrap_Torch class): model from which the parameters are taken.
+            - input (numpy.ndarray): model inputs.
+            - targets (numpy.ndarray): target predictions.
+            - requires_grad (bool): determines whether pytorch should expect to
+            compute.
         ----------
         Returns:
-            - Loss tensor. Type: torch.Tensor.
+            - (torch.Tensor) Log-likelihood tensor.
         """
         if requires_grad:
             predictions = model(input)  # , type_="torch")
@@ -62,16 +60,14 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
     def forward_pointwise(self, model, input, target, requires_grad=False):
         """
         Args:
-            - model: model from which the parameters are taken. Type: NNWrap
-            class.
-            - input: model inputs. Type: numpy.ndarray.
-            - targets: target predictions. Type: numpy.ndarray.
-            - requires_grad: determines whether pytorch should expect to
-            compute. Type: bool.
-            - gradients in a given evaluation. Type: bool.
+            - model (NNWrap/NNWrap_Torch class): model from which the parameters are taken.
+            - input (numpy.ndarray): model inputs.
+            - targets (numpy.ndarray): target predictions.
+            - requires_grad (bool): determines whether pytorch should expect to
+            compute.
         ----------
         Returns:
-            - Loss tensor pointwise (per data point). Type: torch.Tensor.
+            - (torch.Tensor.) Loss tensor pointwise (per data point).
         """
         if requires_grad:
             predictions = model(input)  # , type_="torch")
@@ -166,6 +162,8 @@ class RMS_gaussian_prior(torch.nn.Module):
         parameters). Type: float.
         - n_params: number of parameters being sampled. Type: int.
         - pi: number pi. Type: torch.Tensor.
+        - anchor (torch.Tensor): vector parameter sampled from the prior that acts
+        as anchor of the prior calculation.
     """
 
     def __init__(self, sigma, n_params):
@@ -179,7 +177,7 @@ class RMS_gaussian_prior(torch.nn.Module):
         self.sigma = sigma
         self.n_params = n_params
         self.pi = tch(np.pi, rgrad=False)
-        self.anchor = np.zeros(n_params)
+        self.anchor = torch.zeros(n_params)
 
     def sample_anchor(self):
         """Samples an anchor vector to calculate the prior over the parameters.
@@ -188,7 +186,7 @@ class RMS_gaussian_prior(torch.nn.Module):
         distribution with diagonal covariance and uniform value along the
         diagonal.
         """
-        self.anchor = tch(np.random.normal(scale=self.sigma, size=(self.n_params,)))
+        self.anchor = torch.randn(size=(self.n_params,)) * self.sigma
 
     def forward(self, model, requires_grad=False):
         """

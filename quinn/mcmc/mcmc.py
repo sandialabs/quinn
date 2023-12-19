@@ -14,14 +14,14 @@ class MCMC_NN(QUiNNBase):
     """MCMC NN wrapper class.
     ----------
     Attributes:
-        - lpinfo (dict): Dictionary that holds likelihood computation necessary information.
         - pdim (int): Dimensonality `d` of chain.
         - verbose (bool): Whether to be verbose or not.
         - samples (np.ndarray): MCMC samples of all parameters, size `(M,d)`.
         - cmode (np.ndarray): MAP values of all parameters, size `M`.
         - sampler: sampling algorithm.
-        - log_post: log posterior
-        - nnmodel: NN model defined as an NNWrapp class instance.
+        - log_post: log posterior defining class
+        - nnmodel (NNWrapp class): NN model defined as an NNWrapp class instance.
+        - lpinfo (dict): Dictionary that holds likelihood computation necessary information.
     """
 
     def __init__(self, nnmodel, verbose=True, sampler=None, log_post=None):
@@ -106,13 +106,7 @@ class MCMC_NN(QUiNNBase):
             ytrn (np.ndarray): Output data array `y` of size `(N,o)`.
             zflag (bool, optional): Whether to precede MCMC with a LBFGS optimization. Default is True.
             datanoise (float, optional): Datanoise size. Defaults to 0.05.
-            nmcmc (int, optional): Number of MCMC steps, `M`.
             param_ini (None, optional): Initial parameter array of size `p`. Default samples randomly.
-        Args (the following args to be included in the AMCMC class which should be given as an input when creating the class instance):
-            gamma (float, optional): Proposal jump size factor :math:`\gamma`. Defaults to 0.1.
-            cov_ini (None, optional): Initial covariance array of size `(p,p)`. Default generates initial diagonal covariance that is a 0.01 factor of initial parameters (with a cushion to avoid zero variance).
-            t0 (int, optional): Step where adaptivity begins. Defaults to 100.
-            tadapt (int, optional): Adapt/update covariance every `tadapt` steps. Defaults to 1000.
         """
 
         # Set dictionary info for posterior computation
@@ -146,16 +140,13 @@ class MCMC_NN(QUiNNBase):
             mcmc_results["accrate"],
         )
 
-    def get_best_model(self, param):
+    def get_best_model(self):
         """Creates a PyTorch NN module with parameters set to a given flattened parameter array.
-
-        Args:
-            param (np.ndarray): A flattened weight parameter vector.
 
         Returns:
             torch.nn.Module: PyTorch NN module with the given parameters.
         """
-        self.nnmodel.p_unflatten(param)
+        self.nnmodel.p_unflatten(self.cmode)
 
         return copy.deepcopy(self.nnmodel.nnmodel)
 

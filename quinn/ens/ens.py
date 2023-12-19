@@ -14,6 +14,8 @@ class Ens_NN(QUiNNBase):
         nens (int): Number of ensemble members.
         learners (list[Learner]): List of learners.
         dfrac (float): Fraction of data each learner sees.
+        type_ens (str): Defines the type of ensemble. Important to
+            differentiate "ens" from others.
         verbose (bool): Verbose or not.
     """
 

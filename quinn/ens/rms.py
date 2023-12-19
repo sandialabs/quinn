@@ -31,16 +31,12 @@ class RMS_NN(Ens_NN):
     ):
         """Initialization.
         Args:
-            nnmodel (torch.nn.Module): NNWrapper class.
+            - nnmodel (torch.nn.Module): NNWrapper class.
             - loss_func : Loss function over which the mode is optimized. I takes,
             a NN model, x and y data, and requires_grad as input.
             - nens (int, optional): Number of ensemble members. Defaults to 1.
             - dfrac (float, optional): Fraction of data for each learner. Defaults
             to 1.0.
-            - la_type (string): type of covariance matrix approximation. Default
-            is full. Options are full, kfac and diag.
-            - cov_scale (float): approximated covariances are scaled by this
-            factor. Defaults to 1.
             - verbose (bool, optional): Verbose or not.
         """
         super().__init__(

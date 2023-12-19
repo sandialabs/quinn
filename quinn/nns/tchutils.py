@@ -158,7 +158,7 @@ def nnfit(
 
         def loss_xy(x, y):
             loss_cur = loss(nnmodel(x), y)
-            loss_cur.requires_grad = True
+            # loss_cur.requires_grad = True # This line was giving error: RuntimeError: you can only change requires_grad flags of leaf variables.
             return loss_cur
 
     # Optimizer selection

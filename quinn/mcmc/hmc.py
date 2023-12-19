@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from quinn.nns.nnwrap import NNWrap_Torch
 
 
 class HMC_NN:
@@ -10,16 +11,13 @@ class HMC_NN:
     This implementation is based on Neal (2011).
     -----------
     Attributes:
-        - epsilon: step size for the Leap Frog optimization algorithm.
-        Type: float.
-        - L_steps: number of steps within the Leap Frog optimization algorithm.
-        Type: int.
-        - u_func: pytorch module calculating the U component of the
-        hamiltonian. Type: torch.nn.Module.
-        - nmcmc: number of samples from sampler. Type: int.
-        - nburning: number of initial samples to burn. Type: int.
-        - pos_theta: list containing samples from the posterior. Type: list of
-        numpy.ndarray's.
+        - epsilon (float): step size for the Leap Frog optimization algorithm.
+        - L_steps (int): number of steps within the Leap Frog optimization algorithm.
+        - u_func (torch.nn.Module): pytorch module calculating the U component of the
+        hamiltonian.
+        - nmcmc (int): number of samples from sampler.
+        - nburning (int): number of initial samples to burn.
+        - pos_theta (list[np.ndarray]): list containing samples from the posterior.
     """
 
     def __init__(self, u_func, sampling_params, nmcmc, nburning) -> None:
@@ -27,7 +25,7 @@ class HMC_NN:
         Args:
             - u_func: torch.nn.Module class computing the potential energy, U,
             of the hamiltonian. Type: torch.nn.Module.
-            - sampling_params: dictionary including the parameters reguired
+            - sampling_params: dictionary including the parameters required
             for the sampling algorithm. Parameters to be included are "epsilon"
             and "L_steps" (see the attributes description for a description of
             these parameters.)
@@ -53,10 +51,10 @@ class HMC_NN:
         the momentum variable, p.
         ---------
         Args:
-            - p: momentum variable. Type: numpy array.
+            - p (np.ndarray): momentum variable. Type: numpy array.
         ---------
         Output:
-            - K: K component of the Hamiltonian ("kinetic energy"). Type: float.
+            - K (float): K component of the Hamiltonian ("kinetic energy"). Type: float.
         """
         return np.sum(np.square(p)) / 2
 
@@ -68,24 +66,25 @@ class HMC_NN:
         the class attribute "pos_theta".
         ---------
         Args:
-            - model: NNWrap created with the model over whose parameters we are
-            obtaining the posterior. NNWrap class.
-            - init_guess: initial guess to start the sampling. Type:
-            np.ndarray.
-            - x_data: np.ndarray with shape (N, M), where M is the number of
-            features. Type: np.ndarray.
-            - y_data: np.ndarray with shape (N, d), where d is the dimension
-            is the dimension of the target points. Type: np.ndarray.
+            - model (NNWrap_Torch class): NNWrap created with the model over whose parameters we are
+            obtaining the posterior.
+            - init_guess (np.ndarray): initial guess to start the sampling.
+            - x_data (np.ndarray): input array with shape (N, M), where M is the number of
+            features.
+            - y_data (np.ndarray): target array with shape (N, d), where d is the dimension
+            is the dimension of the target points.
         ---------
         Returns:
             - dictionary with the following content:
-                - "chain": list of samples. Type: np.ndarray.
-                - "mapparameters": sample that maximizes the log posterior. Type:
-                numpy.ndarray.
-                - "maxpost": maximum value of the log posterior achieved during
-                sampling. Type: float.
-                - "accrate": acceptance rate during sampling. Type: float.
+                - "chain" (np.ndarray): list of samples.
+                - "mapparameters" (np.ndarray): sample that maximizes the log posterior.
+                - "maxpost" (float): maximum value of the log posterior achieved during
+                sampling.
+                - "accrate" (float): acceptance rate during sampling.
         """
+        assert isinstance(
+            model, NNWrap_Torch
+        ), "The model must be an instance of the NNWrap_Torch class"
         # Initializing theta
         theta = init_guess
         theta_size = len(theta)

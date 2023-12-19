@@ -12,6 +12,7 @@ from quinn.ens.ens import Ens_NN
 from quinn.ens.swag import SWAG_NN
 from quinn.ens.laplace import LAPLACE_NN
 from quinn.ens.rms import RMS_NN
+from quinn.ens.dropout import Dropout_NN
 from quinn.nns.posterior_funcs import (
     Gaussian_likelihood_assumed_var,
     Gaussian_prior,
@@ -152,9 +153,6 @@ def main():
         uqnet = Ens_NN(nnet, nens=nmc, dfrac=0.8, verbose=True)
         uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=500)
     elif meth == "swag":
-        """
-        This example uses
-        """
         nens = 4
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
@@ -175,9 +173,6 @@ def main():
         )
 
     elif meth == "la":
-        """
-        This example uses
-        """
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = Gaussian_prior(sigma=3, n_params=param_dim)
@@ -194,9 +189,6 @@ def main():
             xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=500
         )
     elif meth == "rms":
-        """
-        This example uses
-        """
         nnet = NNWrap_Torch(nnet)
         likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
         prior = RMS_gaussian_prior(sigma=3, n_params=param_dim)
@@ -208,8 +200,34 @@ def main():
             dfrac=0.8,
             verbose=False,
         )
-        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=500)
-
+        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=1000)
+    elif meth == "dropout":
+        nnet = RNet(
+            10,
+            5,
+            wp_function=Poly(0),
+            indim=ndim,
+            outdim=nout,
+            layer_pre=True,
+            layer_post=True,
+            device=device,
+            dropout=0.02,
+        )
+        nmc = 1
+        likelihood = Gaussian_likelihood_assumed_var(sigma=datanoise)
+        prior = Gaussian_prior(sigma=2, n_params=param_dim)
+        neg_logposterior = NegLogPosterior_Assumed_Variance(likelihood, prior)
+        uqnet = Dropout_NN(nnet, nens=nmc, dfrac=0.8, verbose=True)
+        uqnet.fit(
+            xtrn,
+            ytrn,
+            val=[xval, yval],
+            lrate=0.01,
+            batch_size=2,
+            nepochs=500,
+            loss_fn="logposterior",
+            loss=neg_logposterior,
+        )
     else:
         print(f"UQ Method {meth} is unknown. Exiting.")
         sys.exit()
@@ -232,7 +250,7 @@ def main():
             true_model=true_model,
             name_postfix=str(meth),
         )
-    uqnet.predict_plot(xx_list, yy_list, nmc=100, plot_qt=False, labels=ll_list)
+    uqnet.predict_plot(xx_list, yy_list, nmc=1000, plot_qt=False, labels=ll_list)
 
 
 if __name__ == "__main__":

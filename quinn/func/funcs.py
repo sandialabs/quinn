@@ -138,7 +138,7 @@ def genz_funcs(x, a=None, u=None, func_type="continuous", datanoise=0.02):
                     u_i: chosen randomly from [0,1] if not provided.
 
     Args:
-        xx (np.ndarray): Input array :math:`x` of size `(N,d)`.
+        x (np.ndarray): Input array :math:`x` of size `(N,d)`.
         a (np.ndarray, float): array with a parameters.
         u (np.ndarray, float): array with u parameters.
         func_type (string): indicates the type of genz function to be used.
