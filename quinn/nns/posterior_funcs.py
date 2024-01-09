@@ -21,7 +21,7 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
         super().__init__()
 
         self.sigma = sigma
-        self.pi = tch(np.pi, rgrad=False)
+        self.pi = tch(np.pi, rgrad=False) # torch.Tensor(tch(np.pi, rgrad=False))
 
     def forward(self, model, input, target, requires_grad=False):
         """
@@ -41,7 +41,7 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
                 0.5 * torch.sum(torch.pow(target - predictions, 2)) / self.sigma**2
             )
             part2 = (len(input) / 2) * torch.log(
-                2 * torch.Tensor(self.pi) * self.sigma**2
+                2 * self.pi * self.sigma**2
             )
             return -part1 - part2
         else:
@@ -53,7 +53,7 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
                     / self.sigma**2
                 )
                 part2 = (len(input) / 2) * torch.log(
-                    2 * torch.Tensor(self.pi) * self.sigma**2
+                    2 * self.pi * self.sigma**2
                 )
             return -part1 - part2
 
@@ -80,7 +80,7 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
                 / self.sigma**2
             )
             part2 = (len(input) / 2) * torch.log(
-                2 * torch.Tensor(self.pi) * self.sigma**2
+                2 * self.pi * self.sigma**2
             )
             return -part1 - part2
         else:
@@ -95,7 +95,7 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
                     / self.sigma**2
                 )
                 part2 = (len(input) / 2) * torch.log(
-                    2 * torch.Tensor(self.pi) * self.sigma**2
+                    2 * self.pi * self.sigma**2
                 )
                 return -part1 - part2
 
@@ -121,6 +121,7 @@ class Gaussian_prior(torch.nn.Module):
         self.sigma = sigma
         self.n_params = n_params
         self.pi = tch(np.pi, rgrad=False)
+        # torch.Tensor(tch(np.pi, rgrad=False))
 
     def forward(self, model, requires_grad=False):
         """
@@ -139,7 +140,7 @@ class Gaussian_prior(torch.nn.Module):
                 loss += torch.sum(torch.pow(p, 2))
             loss = loss / 2 / self.sigma**2
             loss += (self.n_params / 2) * torch.log(
-                2 * torch.Tensor(self.pi) * self.sigma**2
+                2 * self.pi * self.sigma**2
             )
             return -loss
         else:
@@ -149,7 +150,7 @@ class Gaussian_prior(torch.nn.Module):
                     loss += torch.sum(torch.pow(p, 2))
                 loss = loss / 2 / self.sigma**2
                 loss += (self.n_params / 2) * torch.log(
-                    2 * torch.Tensor(self.pi) * self.sigma**2
+                    2 * self.pi * self.sigma**2
                 )
             return -loss
 
@@ -176,7 +177,7 @@ class RMS_gaussian_prior(torch.nn.Module):
         super().__init__()
         self.sigma = sigma
         self.n_params = n_params
-        self.pi = tch(np.pi, rgrad=False)
+        self.pi = tch(np.pi, rgrad=False) # torch.Tensor(tch(np.pi, rgrad=False))
         self.anchor = torch.zeros(n_params)
 
     def sample_anchor(self):
@@ -210,7 +211,7 @@ class RMS_gaussian_prior(torch.nn.Module):
                 i += cur_len
             loss = loss / 2 / self.sigma**2
             loss += (self.n_params / 2) * torch.log(
-                2 * torch.Tensor(self.pi) * self.sigma**2
+                2 * self.pi * self.sigma**2
             )
             return -loss
         else:
@@ -224,7 +225,7 @@ class RMS_gaussian_prior(torch.nn.Module):
                     i += cur_len
                 loss = loss / 2 / self.sigma**2
                 loss += (self.n_params / 2) * torch.log(
-                    2 * torch.Tensor(self.pi) * self.sigma**2
+                    2 * self.pi * self.sigma**2
                 )
             return -loss
 
