@@ -118,6 +118,8 @@ class RNet(MLPBase):
             )
             if dropout > 0.0:
                 self.dropout_pre = torch.nn.Dropout(p=dropout)
+            else:
+                self.dropout_pre = None
 
         if self.layer_post:
             self.weight_post = torch.nn.Parameter(
@@ -132,6 +134,8 @@ class RNet(MLPBase):
             )
             if dropout > 0.0:
                 self.dropout_post = torch.nn.Dropout(p=dropout)
+            else:
+                self.dropout_post = None
 
         pars_w = []
         for ip in range(self.wp_function.npar):
@@ -163,12 +167,12 @@ class RNet(MLPBase):
             self.activ = torch.nn.Tanh()
         else:
             self.activ = torch.nn.Identity()
+
+        self.dropout_layers_in = []
         if dropout > 0.0:
-            self.dropout_layers_in = []
             for _ in range(self.nlayers + 1):
                 self.dropout_layers_in.append(torch.nn.Dropout(p=dropout))
-        else:
-            self.dropout_layer = None
+
 
         self.to(device)
 
@@ -185,7 +189,7 @@ class RNet(MLPBase):
 
         # Note that the prelayer has activation, too, to avoid two linear layers in succession
         if self.layer_pre:
-            if self.dropout_pre:
+            if self.dropout_pre is not None:
                 out = self.dropout_pre(out)
             out = self.activ(F.linear(out, self.weight_pre, self.bias_pre))
 
@@ -203,7 +207,7 @@ class RNet(MLPBase):
                 bias = self.wp_function(paramsb, self.step_size * i)
             else:
                 bias = None
-            if self.dropout_layers_in:
+            if len(self.dropout_layers_in)>0:
                 out = self.dropout_layers_in[i](out)
             if self.mlp:
                 out = self.activ(F.linear(out, weight, bias))
@@ -211,7 +215,7 @@ class RNet(MLPBase):
                 out = out + self.step_size * self.activ(F.linear(out, weight, bias))
 
         if self.layer_post:
-            if self.dropout_post:
+            if self.dropout_post is not None:
                 out = self.dropout_post(out)
             out = F.linear(out, self.weight_post, self.bias_post)
         if self.final_layer == "exp":
