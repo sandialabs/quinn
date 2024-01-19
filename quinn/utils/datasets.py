@@ -11,7 +11,7 @@ from ucimlrepo import fetch_ucirepo
 class UCI_abalone(Dataset):
     """Face Landmarks dataset."""
 
-    def __init__(self):
+    def __init__(self, dtype="torch"):
         """
         Arguments:
             csv_file (string): Path to the csv file with annotations.
@@ -31,8 +31,14 @@ class UCI_abalone(Dataset):
             return (column - column.min()) / (column.max() - column.min())
 
         self.X = self.X.apply(normalize_column)
-        self.X = torch.tensor(self.X.values, dtype=torch.float32)
-        self.y = torch.tensor(self.y.values, dtype=torch.float32)
+        if dtype == "torch":
+            self.X = torch.tensor(self.X.values, dtype=torch.float32)
+            self.y = torch.tensor(self.y.values, dtype=torch.float32)
+        elif dtype == "numpy":
+            self.X = self.X.values
+            self.y = self.y.values
+        else:
+            print(f"Data type {dtype} not recognized.")
 
     def __len__(self):
         return len(self.X)
