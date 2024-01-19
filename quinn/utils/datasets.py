@@ -31,6 +31,7 @@ class UCI_abalone(Dataset):
             return (column - column.min()) / (column.max() - column.min())
 
         self.X = self.X.apply(normalize_column)
+        self.y = self.y.apply(normalize_column)
         if dtype == "torch":
             self.X = torch.tensor(self.X.values, dtype=torch.float32)
             self.y = torch.tensor(self.y.values, dtype=torch.float32)
@@ -44,4 +45,4 @@ class UCI_abalone(Dataset):
         return len(self.X)
 
     def __getitem__(self, idx):
-        return self.X[idx]
+        return self.X[idx], self.y[idx]
