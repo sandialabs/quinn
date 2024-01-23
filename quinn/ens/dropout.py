@@ -2,6 +2,7 @@
 """Module for Ensemble NN wrapper."""
 
 import numpy as np
+import torch
 
 from .learner import Learner
 from ..quinn import QUiNNBase
@@ -30,3 +31,22 @@ class Dropout_NN(Ens_NN):
             type_ens="dropout",
             verbose=verbose,
         )
+
+    def predict_sample(self, x, jens=None):
+        """Predict a single, randomly selected sample.
+
+        Args:
+            x (np.ndarray): Input array of size `(N,d)`.
+            jens (int): the ensemble index to use.
+        Returns:
+            np.ndarray: Output array of size `(N,o)`.
+        """
+        dim = x.shape[0]
+        seed = torch.randint(0, int(1e6), (1,))
+        if jens is None:
+            jens = np.random.randint(0, self.nens)
+        output = []
+        for i in range(dim):
+            torch.manual_seed(seed)
+            output.append(self.learners[jens].predict(x[i]))
+        return np.array(output)

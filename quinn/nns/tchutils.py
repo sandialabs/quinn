@@ -112,6 +112,7 @@ def nnfit(
     freq_out=100,
     freq_plot=1000,
     lhist_suffix="",
+    plot_loss=True,
 ):
     r"""Generic PyTorch NN fit function that is utilized in appropriate NN classes.
 
@@ -140,7 +141,7 @@ def nnfit(
     Returns:
         dict: Dictionary of the results. Keys 'best_fepoch', 'best_epoch', 'best_loss', 'best_nnmodel', 'history'.
     """
-
+    print("WAS this PASSED?", plot_loss)
     # Loss function
     if loss is None:
         if loss_fn == "mse":
@@ -299,7 +300,7 @@ def nnfit(
             print(printout, flush=True)
 
         ## Plotting
-        if t % freq_plot == 0 or t == nepochs - 1:
+        if (t % freq_plot == 0 or t == nepochs - 1) and plot_loss:
             fepochs = [state[0] for state in fit_info["history"]]
             losses_trn = [state[1] for state in fit_info["history"]]
             losses_trn_full = [state[2] for state in fit_info["history"]]

@@ -159,6 +159,8 @@ class QUiNNBase:
         true_model=None,
         labels=None,
         colors=None,
+        show_plot=False,
+        save_plot=True,
         name_postfix="",
     ):
         """Plotting one-dimensional slices, with the other dimensions at the nominal, of the fit.
@@ -263,7 +265,16 @@ class QUiNNBase:
                 plt.legend()
                 plt.xlabel(f"Input # {idim+1}")
                 plt.ylabel(f"Output # {iout+1}")
-                plt.savefig(
-                    "fit_d" + str(idim) + "_o" + str(iout) + "_" + name_postfix + ".png"
-                )
+                if show_plot:
+                    plt.show()
+                if save_plot:
+                    plt.savefig(
+                        "fit_d"
+                        + str(idim)
+                        + "_o"
+                        + str(iout)
+                        + "_"
+                        + name_postfix
+                        + ".png"
+                    )
                 plt.clf()

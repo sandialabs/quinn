@@ -84,6 +84,8 @@ class RNet(MLPBase):
 
         self.nlayers = nlayers
         self.biasorno = biasorno
+        self.nonlin = nonlin
+        self.dropout = dropout
         if wp_function is None:
             self.wp_function = NonPar(nlayers + 1)
         else:
@@ -173,8 +175,26 @@ class RNet(MLPBase):
             for _ in range(self.nlayers + 1):
                 self.dropout_layers_in.append(torch.nn.Dropout(p=dropout))
 
-
         self.to(device)
+
+    def reinitialize_instance(self):
+        self.__init__(
+            rdim=self.rdim,
+            nlayers=self.nlayers,
+            wp_function=self.wp_function,
+            indim=self.indim,
+            outdim=self.outdim,
+            biasorno=self.biasorno,
+            nonlin=self.nonlin,
+            mlp=self.mlp,
+            layer_pre=self.layer_pre,
+            layer_post=self.layer_post,
+            final_layer=self.final_layer,
+            device=self.device,
+            init_factor=self.init_factor,
+            sum_dim=self.sum_dim,
+            dropout=self.dropout,
+        )
 
     def forward(self, x):
         r"""Forward function.
@@ -207,7 +227,7 @@ class RNet(MLPBase):
                 bias = self.wp_function(paramsb, self.step_size * i)
             else:
                 bias = None
-            if len(self.dropout_layers_in)>0:
+            if len(self.dropout_layers_in) > 0:
                 out = self.dropout_layers_in[i](out)
             if self.mlp:
                 out = self.activ(F.linear(out, weight, bias))

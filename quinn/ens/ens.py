@@ -35,6 +35,7 @@ class Ens_NN(QUiNNBase):
         self.type_ens = type_ens
         self.learners = []
         for i in range(nens):
+            nnmodel.reinitialize_instance()
             self.learners.append(Learner(nnmodel))
 
         if self.verbose:

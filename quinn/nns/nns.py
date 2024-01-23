@@ -49,7 +49,7 @@ class Sine(torch.nn.Module):
             torch.Tensor: Output tensor of same size as input `x`.
         """
 
-        return torch.sin(self.A * torch.Tensor(math.pi) * x / self.T)
+        return torch.sin(self.A * torch.tensor(math.pi) * x / self.T)
 
 
 class Polynomial(torch.nn.Module):

@@ -203,7 +203,7 @@ def main():
         uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=5, nepochs=1000)
     elif meth == "dropout":
         nnet = RNet(
-            10,
+            100,
             5,
             wp_function=Poly(0),
             indim=ndim,
@@ -224,7 +224,7 @@ def main():
             val=[xval, yval],
             lrate=0.01,
             batch_size=2,
-            nepochs=500,
+            nepochs=1000,
             loss_fn="logposterior",
             loss=neg_logposterior,
         )
@@ -250,7 +250,7 @@ def main():
             true_model=true_model,
             name_postfix=str(meth),
         )
-    uqnet.predict_plot(xx_list, yy_list, nmc=1000, plot_qt=False, labels=ll_list)
+    uqnet.predict_plot(xx_list, yy_list, nmc=100, plot_qt=False, labels=ll_list)
 
 
 if __name__ == "__main__":
