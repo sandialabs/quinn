@@ -85,10 +85,10 @@ class MLP(MLPBase):
 
         modules.append(activ_fcn)
         modules.append(torch.nn.Linear(self.hls[-1], self.outdim, bias=self.biasorno))
-        if self.dropout > 0.0:
-            modules.append(torch.nn.Dropout(p=self.dropout))
-        if self.bnorm:
-            modules.append(torch.nn.BatchNorm1d(self.outdim, affine=self.bnlearn))
+        # if self.dropout > 0.0:
+        #     modules.append(torch.nn.Dropout(p=self.dropout))
+        # if self.bnorm:
+        #     modules.append(torch.nn.BatchNorm1d(self.outdim, affine=self.bnlearn))
 
         if self.final_transform == "exp":
             modules.append(Expon())

@@ -162,6 +162,9 @@ class NNWrap_Torch(torch.nn.Module):
 
         return self.nnmodel(tch(x, device=device))
 
+    def reinitialize_instance(self):
+        self.nnmodel.reinitialize_instance()
+
     def forward(self, x):
         """Calling the wrapper function.
         ----------

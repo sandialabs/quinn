@@ -141,7 +141,7 @@ def nnfit(
     Returns:
         dict: Dictionary of the results. Keys 'best_fepoch', 'best_epoch', 'best_loss', 'best_nnmodel', 'history'.
     """
-    print("WAS this PASSED?", plot_loss)
+
     # Loss function
     if loss is None:
         if loss_fn == "mse":
