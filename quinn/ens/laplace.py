@@ -92,12 +92,12 @@ class LAPLACE_NN(Ens_NN):
         else:
             assert (
                 NotImplementedError
-            ), "Wrong approximation type given. Only full, kf and diag are accepted."
+            ), "Wrong approximation type given. Only full, kfac and diag are accepted."
         if not batch_size:
             hessian_mat = hessian_func(
                 learner.nnmodel, weights_map, self.loss_func, xtrn, ytrn
             )
-            cov_mat = np.linalg.inv(hessian_mat)
+            cov_mat = np.linalg.inv(hessian_mat * self.cov_scale)
         if batch_size:
             hessian_mat = None
             for i in range(len(xtrn) // batch_size + 1):
