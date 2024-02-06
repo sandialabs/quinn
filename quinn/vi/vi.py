@@ -11,6 +11,7 @@ from ..quinn import QUiNNBase
 from ..nns.tchutils import npy, tch, print_nnparams, nnfit
 from ..nns.nnwrap import nn_p, NNWrap
 
+
 class VI_NN(QUiNNBase):
     """VI wrapper class.
 
@@ -23,9 +24,18 @@ class VI_NN(QUiNNBase):
         best_model (torch.nn.Module): The best PyTorch NN model found during training.
     """
 
-    def __init__(self, nnmodel, verbose=False, pi=0.5, sigma1=1.0, sigma2=1.0,
-                       mu_init_lower=-0.2, mu_init_upper=0.2,
-                       rho_init_lower=-5.0, rho_init_upper=-4.0 ):
+    def __init__(
+        self,
+        nnmodel,
+        verbose=False,
+        pi=0.5,
+        sigma1=1.0,
+        sigma2=1.0,
+        mu_init_lower=-0.2,
+        mu_init_upper=0.2,
+        rho_init_lower=-5.0,
+        rho_init_upper=-4.0,
+    ):
         """Instantiate a VI wrapper object.
 
         Args:
@@ -42,13 +52,20 @@ class VI_NN(QUiNNBase):
         """
         super().__init__(nnmodel)
 
-        self.bmodel = BNet(nnmodel,pi=pi,sigma1=sigma1,sigma2=sigma2,
-                                   mu_init_lower=mu_init_lower, mu_init_upper=mu_init_upper,
-                                   rho_init_lower=rho_init_lower, rho_init_upper=rho_init_upper )
+        self.bmodel = BNet(
+            nnmodel,
+            pi=pi,
+            sigma1=sigma1,
+            sigma2=sigma2,
+            mu_init_lower=mu_init_lower,
+            mu_init_upper=mu_init_upper,
+            rho_init_lower=rho_init_lower,
+            rho_init_upper=rho_init_upper,
+        )
         try:
             self.device = nnmodel.device
         except AttributeError:
-            self.device = 'cpu'
+            self.device = "cpu"
 
         self.bmodel.to(self.device)
         self.verbose = verbose
@@ -60,12 +77,24 @@ class VI_NN(QUiNNBase):
             print_nnparams(self.bmodel, names_only=True)
             print("===========================================================")
 
-    def fit(self, xtrn, ytrn, val=None,
-            nepochs=600, lrate=0.01, batch_size=None, freq_out=100,
-            freq_plot=1000, wd=0,
-            cooldown=100,
-            factor=0.95,
-            nsam=1,scheduler_lr=None, datanoise=0.05):
+    def fit(
+        self,
+        xtrn,
+        ytrn,
+        val=None,
+        nepochs=600,
+        lrate=0.01,
+        batch_size=None,
+        freq_out=100,
+        freq_plot=1000,
+        wd=0,
+        cooldown=100,
+        factor=0.95,
+        nsam=1,
+        scheduler_lr=None,
+        datanoise=0.05,
+        plot_loss=True,
+    ):
         """Fit function to train the network.
 
         Args:
@@ -77,7 +106,7 @@ class VI_NN(QUiNNBase):
             batch_size (int, optional): Batch size. Default is None, i.e. single batch.
             freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
             nsam (int, optional): Number of samples for ELBO computation. Defaults to 1.
-            scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch. 
+            scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch.
             datanoise (float, optional): Datanoise for ELBO computation. Defaults to 0.05.
             freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
             wd (float, optional): Optional weight decay (L2 regularization) parameter.
@@ -88,7 +117,7 @@ class VI_NN(QUiNNBase):
         shape_xtrn = xtrn.shape
         ntrn = shape_xtrn[0]
         ntrn_, outdim = ytrn.shape
-        assert(ntrn==ntrn_)
+        assert ntrn == ntrn_
 
         if batch_size is None or batch_size > ntrn:
             batch_size = ntrn
@@ -100,18 +129,25 @@ class VI_NN(QUiNNBase):
 
         self.bmodel.loss_params = [datanoise, nsam, num_batches]
 
-        fit_info = nnfit(self.bmodel, xtrn, ytrn, val=val,
-                         loss_xy=self.bmodel.viloss,
-                         lrate=lrate, batch_size=batch_size,
-                         nepochs=nepochs,
-                         wd=wd,
-                         cooldown=cooldown,
-                         factor=factor,
-                         freq_plot=freq_plot,
-                         scheduler_lr=scheduler_lr, freq_out=freq_out)
-        self.best_model = fit_info['best_nnmodel']
+        fit_info = nnfit(
+            self.bmodel,
+            xtrn,
+            ytrn,
+            val=val,
+            loss_xy=self.bmodel.viloss,
+            lrate=lrate,
+            batch_size=batch_size,
+            nepochs=nepochs,
+            wd=wd,
+            cooldown=cooldown,
+            factor=factor,
+            freq_plot=freq_plot,
+            scheduler_lr=scheduler_lr,
+            freq_out=freq_out,
+            plot_loss=plot_loss,
+        )
+        self.best_model = fit_info["best_nnmodel"]
         self.trained = True
-
 
     # def fit_deprecated(self, xtrn, ytrn, datanoise=0.05, nepochs=600, lrate=0.01, batch_size=None, nsam=1, freq_out=100, Xtst=None, ytst=None):
     #     """Deprecated. Should be removed."""
@@ -151,12 +187,10 @@ class VI_NN(QUiNNBase):
 
     #             optimizer.step()
 
-
     #         if loss.item() < self.best_loss:
     #             self.best_loss = loss.item()
     #             self.best_model = copy.copy(self.bmodel)
     #             self.best_epoch = t
-
 
     #         if t == 0:
     #             print('{:>10} {:>10} {:>18} {:>10}'.\
@@ -183,15 +217,17 @@ class VI_NN(QUiNNBase):
         Note:
             predict_ens() from the parent class will use this to sample an ensemble.
         """
-        assert(self.trained)
+        assert self.trained
         device = self.best_model.device
-        y = npy(self.best_model(tch(x, rgrad=False,device=device), sample=True))
+        y = npy(self.best_model(tch(x, rgrad=False, device=device), sample=True))
 
         return y
 
+
 ######################################################################
 ######################################################################
 ######################################################################
+
 
 class BNet(torch.nn.Module):
     """Bayesian NN class.
@@ -207,9 +243,17 @@ class BNet(torch.nn.Module):
         log_variational_posterior (float): Value of logarithm of variational posterior.
     """
 
-    def __init__(self, nnmodel, pi=0.5, sigma1=1.0, sigma2=1.0,
-                                mu_init_lower=-0.2, mu_init_upper=0.2,
-                                rho_init_lower=-5.0, rho_init_upper=-4.0  ):
+    def __init__(
+        self,
+        nnmodel,
+        pi=0.5,
+        sigma1=1.0,
+        sigma2=1.0,
+        mu_init_lower=-0.2,
+        mu_init_upper=0.2,
+        rho_init_lower=-5.0,
+        rho_init_upper=-4.0,
+    ):
         """Instantiate a Bayesian NN object given an underlying PyTorch NN module.
 
         Args:
@@ -223,14 +267,14 @@ class BNet(torch.nn.Module):
             rho_init_upper (float) : Initialization of rho upper value
         """
         super().__init__()
-        assert(isinstance(nnmodel, torch.nn.Module))
+        assert isinstance(nnmodel, torch.nn.Module)
 
         self.nnmodel = copy.deepcopy(nnmodel)
-        
+
         try:
             self.device = nnmodel.device
         except AttributeError:
-            self.device = 'cpu'
+            self.device = "cpu"
         # for name, param in self.nnmodel.named_parameters():
         #     print(name)
         #     if param.requires_grad:
@@ -245,42 +289,45 @@ class BNet(torch.nn.Module):
         self.param_names = []
         self.rparams = []
         self.param_priors = []
-        i=0
+        i = 0
         for name, param in self.nnmodel.named_parameters():
             if param.requires_grad:
 
-                #param.requires_grad = False
-                mu = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(mu_init_lower, mu_init_upper))
-                self.register_parameter(name.replace('.', '_')+"_mu", mu)
+                # param.requires_grad = False
+                mu = torch.nn.Parameter(
+                    torch.Tensor(param.shape).uniform_(mu_init_lower, mu_init_upper)
+                )
+                self.register_parameter(name.replace(".", "_") + "_mu", mu)
 
-                rho = torch.nn.Parameter(torch.Tensor(param.shape).uniform_(rho_init_lower, rho_init_upper))
-                self.register_parameter(name.replace('.', '_')+"_rho", rho)
+                rho = torch.nn.Parameter(
+                    torch.Tensor(param.shape).uniform_(rho_init_lower, rho_init_upper)
+                )
+                self.register_parameter(name.replace(".", "_") + "_rho", rho)
 
-                if i==0:
+                if i == 0:
                     self.params = torch.nn.ParameterList([mu, rho])
                 else:
                     self.params.append(mu)
                     self.params.append(rho)
                 self.rparams.append(Gaussian(mu, logsigma=rho))
-                
+
                 ## PRIOR
                 self.param_priors.append(GMM2(pi, sigma1, sigma2))
                 self.param_names.append(name)
 
-            #     for i, param_name in enumerate(self.param_names):
-            # #print("AAAA ", i, param_name)
-            # self.set_attr(self.nnmodel,param_name.split("."), par_samples[i])
+                #     for i, param_name in enumerate(self.param_names):
+                # #print("AAAA ", i, param_name)
+                # self.set_attr(self.nnmodel,param_name.split("."), par_samples[i])
 
-                i+=1
+                i += 1
 
         self.log_prior = 0.0
         self.log_variational_posterior = 0.0
         self.nparams = len(self.rparams)
 
-        #print("AAAAA ", self.param_names)
+        # print("AAAAA ", self.param_names)
         for param_name in self.param_names:
-            self.del_attr(self.nnmodel,param_name.split("."))
-
+            self.del_attr(self.nnmodel, param_name.split("."))
 
     # Inspired by this https://discuss.pytorch.org/t/how-does-one-have-the-parameters-of-a-model-not-be-leafs/70076/10
     # this could be better https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
@@ -311,7 +358,6 @@ class BNet(torch.nn.Module):
         else:
             self.set_attr(getattr(obj, names[0]), names[1:], val)
 
-
     def forward(self, x, sample=False, par_samples=None):
         """Forward function of Bayesian NN object.
 
@@ -334,8 +380,7 @@ class BNet(torch.nn.Module):
                 for rpar in self.rparams:
                     par_samples.append(rpar.mu)
 
-        assert(len(par_samples)==self.nparams)
-
+        assert len(par_samples) == self.nparams
 
         if self.training:
             self.log_prior = 0.0
@@ -348,19 +393,16 @@ class BNet(torch.nn.Module):
         else:
             self.log_prior, self.log_variational_posterior = 0, 0
 
-
         for i, param_name in enumerate(self.param_names):
-            #print("AAAA ", i, param_name, param_name.split("."), par_samples[i])
-            self.set_attr(self.nnmodel,param_name.split("."), par_samples[i])
-            #print([i for i in self.nnmodel.coefs])
-            #self.nnmodel.register_parameter(param_name.replace(".","_"), torch.nn.Parameter(par_samples[i]))
-        #print("BBB ", list(self.nnmodel.parameters()))
-        #print(dir(self))
-        #print(par_samples)
-
+            # print("AAAA ", i, param_name, param_name.split("."), par_samples[i])
+            self.set_attr(self.nnmodel, param_name.split("."), par_samples[i])
+            # print([i for i in self.nnmodel.coefs])
+            # self.nnmodel.register_parameter(param_name.replace(".","_"), torch.nn.Parameter(par_samples[i]))
+        # print("BBB ", list(self.nnmodel.parameters()))
+        # print(dir(self))
+        # print(par_samples)
 
         return self.nnmodel(x)
-
 
     def sample_elbo(self, x, target, nsam, likparams=None):
         """Sample from ELBO.
@@ -377,8 +419,8 @@ class BNet(torch.nn.Module):
         shape_x = x.shape
         batch_size = shape_x[0]
         batch_size_, outdim = target.shape
-        assert(batch_size == batch_size_)
-        # FIXME: 
+        assert batch_size == batch_size_
+        # FIXME:
         device = x.device
         outputs = torch.zeros(nsam, batch_size, outdim, device=device)
         log_priors = torch.zeros(nsam, device=device)
@@ -387,16 +429,20 @@ class BNet(torch.nn.Module):
             outputs[i] = self(x, sample=True)
             log_priors[i] = self.log_prior
             log_variational_posteriors[i] = self.log_variational_posterior
-        #print("AA ", outputs)
+        # print("AA ", outputs)
         log_prior = log_priors.mean()
         log_variational_posterior = log_variational_posteriors.mean()
-        #print(F.mse_loss(outputs, target, reduction='mean').shape)
+        # print(F.mse_loss(outputs, target, reduction='mean').shape)
         # outputs is MxBxd, target is Bxd, below broadcasting works, and we average over MxBxd (usually d=1)
-        #negative_log_likelihood = F.mse_loss(outputs, target, reduction='none').mean()
-        #print(outputs.shape, target.shape)
+        # negative_log_likelihood = F.mse_loss(outputs, target, reduction='none').mean()
+        # print(outputs.shape, target.shape)
         ## FIXME transfer data to device is expensive.
         datasigma = torch.Tensor([likparams[0]]).to(device)
-        negative_log_likelihood = batch_size * torch.log(datasigma) + 0.5*batch_size*torch.log(2.0*torch.tensor(math.pi))+ 0.5 * batch_size * ((outputs - target)**2).mean() / datasigma**2
+        negative_log_likelihood = (
+            batch_size * torch.log(datasigma)
+            + 0.5 * batch_size * torch.log(2.0 * torch.tensor(math.pi))
+            + 0.5 * batch_size * ((outputs - target) ** 2).mean() / datasigma**2
+        )
 
         return log_prior, log_variational_posterior, negative_log_likelihood
 
@@ -411,8 +457,10 @@ class BNet(torch.nn.Module):
             float: The value of loss function.
         """
         datanoise, nsam, num_batches = self.loss_params
-        log_prior, log_variational_posterior, negative_log_likelihood = self.sample_elbo(data, target, nsam, likparams=[datanoise])
+        log_prior, log_variational_posterior, negative_log_likelihood = (
+            self.sample_elbo(data, target, nsam, likparams=[datanoise])
+        )
 
-        return (log_variational_posterior - log_prior)/num_batches + negative_log_likelihood
-
-
+        return (
+            log_variational_posterior - log_prior
+        ) / num_batches + negative_log_likelihood

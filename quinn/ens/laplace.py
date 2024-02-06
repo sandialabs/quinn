@@ -105,7 +105,7 @@ class LAPLACE_NN(Ens_NN):
                 if j > 0:
                     x_batch, y_batch = (
                         xtrn[i * batch_size : i * batch_size + j],
-                        xtrn[i * batch_size : i * batch_size + j],
+                        ytrn[i * batch_size : i * batch_size + j],
                     )
                     hessian_cur = hessian_func(
                         learner.nnmodel, weights_map, self.loss_func, x_batch, y_batch
