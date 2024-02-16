@@ -76,6 +76,7 @@ class SWAG_NN(Ens_NN):
         nnmodel,
         loss_func,
         ndim,
+        batch_size,
         nens=1,
         dfrac=1.0,
         learn_rate_swag=1e-5,
@@ -116,6 +117,7 @@ class SWAG_NN(Ens_NN):
         self.k = k
         self.loss_func = loss_func
         self.cov_type = cov_type
+        self.batch_size = batch_size
         self.means = []
         self.cov_diags = []
         self.d_mats = []
@@ -123,7 +125,7 @@ class SWAG_NN(Ens_NN):
         if self.verbose:
             self.print_params(names_only=True)
 
-    def swag_calc(self, learner, xtrn, ytrn, batch_size):
+    def swag_calc(self, learner, xtrn, ytrn):
         """
         Given an optimized model, this method stores in the corresponding lists
         the vectors and matrices defining the SWAG posterior.
@@ -142,14 +144,16 @@ class SWAG_NN(Ens_NN):
         else:
             raise NameError
         if self.cov_type == "lowrank":
-            assert self.nsteps > self.k, "Number of steps after "
+            assert (
+                self.nsteps >= self.k
+            ), "Number of steps needs to be greater or equal to k"
         for i in range(1, self.nsteps + 1):
             nnfit_1epoch(
                 learner.nnmodel,
                 xtrn,
                 ytrn,
                 self.loss_func,
-                batch_size=batch_size,
+                batch_size=self.batch_size,
                 optimizer=optim,
             )
             if i % self.c == 0:
@@ -180,7 +184,7 @@ class SWAG_NN(Ens_NN):
         """
         self.fit(xtrn, ytrn, loss_fn="logposterior", loss=self.loss_func, **kwargs)
         for jens in range(self.nens):
-            self.swag_calc(self.learners[jens], xtrn, ytrn, kwargs["batch_size"])
+            self.swag_calc(self.learners[jens], xtrn, ytrn)
 
     def predict_sample(self, x, jens=None):
         """Predict a single, randomly selected sample.

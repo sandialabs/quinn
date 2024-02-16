@@ -20,8 +20,8 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
         """
         super().__init__()
 
-        self.sigma = sigma
-        self.pi = tch(np.pi, rgrad=False) # torch.Tensor(tch(np.pi, rgrad=False))
+        self.sigma = tch(float(sigma), rgrad=False)
+        self.pi = tch(np.pi, rgrad=False)  # torch.Tensor(tch(np.pi, rgrad=False))
 
     def forward(self, model, input, target, requires_grad=False):
         """
@@ -37,24 +37,18 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
         """
         if requires_grad:
             predictions = model(input)  # , type_="torch")
-            part1 = (
-                0.5 * torch.sum(torch.pow(target - predictions, 2)) / self.sigma**2
-            )
-            part2 = (len(input) / 2) * torch.log(
-                2 * self.pi * self.sigma**2
-            )
+            part1 = 0.5 * torch.sum(torch.pow(target - predictions, 2)) / self.sigma**2
+            part2 = (len(input) / 2) * torch.log(2 * self.pi)
+            part2 += 0.5 * torch.log(self.sigma**2 * len(input))
             return -part1 - part2
         else:
             with torch.no_grad():
                 predictions = model(input)  # , type_="torch")
                 part1 = (
-                    0.5
-                    * torch.sum(torch.pow(target - predictions, 2))
-                    / self.sigma**2
+                    0.5 * torch.sum(torch.pow(target - predictions, 2)) / self.sigma**2
                 )
-                part2 = (len(input) / 2) * torch.log(
-                    2 * self.pi * self.sigma**2
-                )
+                part2 = (len(input) / 2) * torch.log(2 * self.pi)
+                part2 += 0.5 * torch.log(self.sigma**2 * len(input))
             return -part1 - part2
 
     def forward_pointwise(self, model, input, target, requires_grad=False):
@@ -79,9 +73,8 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
                 )
                 / self.sigma**2
             )
-            part2 = (len(input) / 2) * torch.log(
-                2 * self.pi * self.sigma**2
-            )
+            part2 = (len(input) / 2) * torch.log(2 * self.pi)
+            part2 += 0.5 * torch.log(self.sigma**2 * len(input))
             return -part1 - part2
         else:
             with torch.no_grad():
@@ -94,9 +87,8 @@ class Gaussian_likelihood_assumed_var(torch.nn.Module):
                     )
                     / self.sigma**2
                 )
-                part2 = (len(input) / 2) * torch.log(
-                    2 * self.pi * self.sigma**2
-                )
+                part2 = (len(input) / 2) * torch.log(2 * self.pi)
+                part2 += 0.5 * torch.log(self.sigma**2 * len(input))
                 return -part1 - part2
 
 
@@ -118,7 +110,7 @@ class Gaussian_prior(torch.nn.Module):
             - n_params: number of parameters being sampled. Type: int.
         """
         super().__init__()
-        self.sigma = sigma
+        self.sigma = tch(float(sigma), rgrad=False)
         self.n_params = n_params
         self.pi = tch(np.pi, rgrad=False)
         # torch.Tensor(tch(np.pi, rgrad=False))
@@ -139,9 +131,8 @@ class Gaussian_prior(torch.nn.Module):
             for p in model.parameters():
                 loss += torch.sum(torch.pow(p, 2))
             loss = loss / 2 / self.sigma**2
-            loss += (self.n_params / 2) * torch.log(
-                2 * self.pi * self.sigma**2
-            )
+            loss += (self.n_params / 2) * torch.log(2 * self.pi)
+            loss += (1 / 2) * torch.log(self.n_params * self.sigma**2)
             return -loss
         else:
             with torch.no_grad():
@@ -149,9 +140,8 @@ class Gaussian_prior(torch.nn.Module):
                 for p in model.parameters():
                     loss += torch.sum(torch.pow(p, 2))
                 loss = loss / 2 / self.sigma**2
-                loss += (self.n_params / 2) * torch.log(
-                    2 * self.pi * self.sigma**2
-                )
+                loss += (self.n_params / 2) * torch.log(2 * self.pi)
+                loss += (1 / 2) * torch.log(self.n_params * self.sigma**2)
             return -loss
 
 
@@ -175,9 +165,9 @@ class RMS_gaussian_prior(torch.nn.Module):
             - n_params: number of parameters being sampled. Type: int.
         """
         super().__init__()
-        self.sigma = sigma
+        self.sigma = tch(float(sigma), rgrad=False)
         self.n_params = n_params
-        self.pi = tch(np.pi, rgrad=False) # torch.Tensor(tch(np.pi, rgrad=False))
+        self.pi = tch(np.pi, rgrad=False)  # torch.Tensor(tch(np.pi, rgrad=False))
         self.anchor = torch.zeros(n_params)
 
     def sample_anchor(self):
@@ -210,9 +200,8 @@ class RMS_gaussian_prior(torch.nn.Module):
                 )
                 i += cur_len
             loss = loss / 2 / self.sigma**2
-            loss += (self.n_params / 2) * torch.log(
-                2 * self.pi * self.sigma**2
-            )
+            loss += (self.n_params / 2) * torch.log(2 * self.pi)
+            loss += (1 / 2) * torch.log(self.n_params * self.sigma**2)
             return -loss
         else:
             with torch.no_grad():
@@ -224,9 +213,8 @@ class RMS_gaussian_prior(torch.nn.Module):
                     )
                     i += cur_len
                 loss = loss / 2 / self.sigma**2
-                loss += (self.n_params / 2) * torch.log(
-                    2 * self.pi * self.sigma**2
-                )
+                loss += (self.n_params / 2) * torch.log(2 * self.pi)
+                loss += (1 / 2) * torch.log(self.n_params * self.sigma**2)
             return -loss
 
 

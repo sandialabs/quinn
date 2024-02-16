@@ -92,6 +92,7 @@ class VI_NN(QUiNNBase):
         factor=0.95,
         nsam=1,
         scheduler_lr=None,
+        optimizer="adam",
         datanoise=0.05,
         plot_loss=True,
     ):
@@ -145,6 +146,7 @@ class VI_NN(QUiNNBase):
             scheduler_lr=scheduler_lr,
             freq_out=freq_out,
             plot_loss=plot_loss,
+            optimizer=optimizer,
         )
         self.best_model = fit_info["best_nnmodel"]
         self.trained = True

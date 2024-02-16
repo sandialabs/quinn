@@ -164,8 +164,8 @@ def main():
             param_dim,
             nens=nens,
             learn_rate_swag=2e-6,
-            dfrac=0.8,
             verbose=True,
+            k=10,
             n_steps=12,
         )
         uqnet.fit_swag(

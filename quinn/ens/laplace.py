@@ -35,7 +35,7 @@ class LAPLACE_NN(Ens_NN):
         nens=1,
         dfrac=1.0,
         la_type="full",
-        cov_scale=1,
+        cov_scale=1.0,
         verbose=False,
     ):
         """Initialization.
@@ -139,9 +139,9 @@ class LAPLACE_NN(Ens_NN):
 
         Args:
             x (np.ndarray): Input array of size `(N,d)`.
-            jens (int): the ensemble index to use.
+            jens (int): the ensemble index to use.v 
         Returns:
-            np.ndarray: Output array of size `(N,o)`.
+            np.ndarray: Output     .array of size `(N,o)`.
         """
         if jens is None:
             jens = np.random.randint(0, self.nens)

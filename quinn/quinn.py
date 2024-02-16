@@ -162,6 +162,7 @@ class QUiNNBase:
         show_plot=False,
         save_plot=True,
         name_postfix="",
+        ax=None,
     ):
         """Plotting one-dimensional slices, with the other dimensions at the nominal, of the fit.
 
@@ -195,8 +196,8 @@ class QUiNNBase:
         if domain is None:
             xall = functools.reduce(lambda x, y: np.vstack((x, y)), xx_list)
             domain = get_domain(xall)
-
-        _ = plt.figure(figsize=(12, 8))
+        if ax is None:
+            _ = plt.figure(figsize=(12, 8))
 
         if plot_qt:
             mlabel = "Median Pred."
@@ -215,66 +216,115 @@ class QUiNNBase:
             ygrid_pred = self.predict_ens(xgrid, nens=nmc)
             ygrid_pred_mb, ygrid_pred_lb, ygrid_pred_ub = get_stats(ygrid_pred, plot_qt)
 
-            for iout in range(nout):
-                for j in range(nlist):
-                    xx = xx_list[j]
-                    yy = yy_list[j]
+            if ax is None:
+                for iout in range(nout):
+                    for j in range(nlist):
+                        xx = xx_list[j]
+                        yy = yy_list[j]
 
-                    plt.plot(
-                        xx[:, idim],
-                        yy[:, iout],
-                        colors[j] + "o",
-                        markersize=13,
-                        markeredgecolor="w",
-                        label=labels[j],
-                        zorder=1000,
-                    )
+                        plt.plot(
+                            xx[:, idim],
+                            yy[:, iout],
+                            colors[j] + "o",
+                            markersize=13,
+                            markeredgecolor="w",
+                            label=labels[j],
+                            zorder=1000,
+                        )
 
-                if true_model is not None:
-                    true = true_model(xgrid, 0.0)
-                    plt.plot(
-                        xgrid[:, idim], true[:, iout], "k-", label="Truth", alpha=0.5
-                    )
+                    if true_model is not None:
+                        true = true_model(xgrid, 0.0)
+                        plt.plot(
+                            xgrid[:, idim],
+                            true[:, iout],
+                            "k-",
+                            label="Truth",
+                            alpha=0.5,
+                        )
 
-                (p,) = plt.plot(
-                    xgrid[:, idim],
-                    ygrid_pred_mb[:, iout],
-                    "m-",
-                    linewidth=5,
-                    label=mlabel,
-                )
-                for ygrid_pred_sample in ygrid_pred:
                     (p,) = plt.plot(
                         xgrid[:, idim],
-                        ygrid_pred_sample[:, iout],
-                        "m--",
-                        linewidth=1,
-                        zorder=-10000,
+                        ygrid_pred_mb[:, iout],
+                        "m-",
+                        linewidth=5,
+                        label=mlabel,
                     )
-                lc = lighten_color(p.get_color(), 0.5)
-                plt.fill_between(
-                    xgrid[:, idim],
-                    ygrid_pred_mb[:, iout] - ygrid_pred_lb[:, iout],
-                    ygrid_pred_mb[:, iout] + ygrid_pred_ub[:, iout],
-                    color=lc,
-                    zorder=-1000,
-                    alpha=0.9,
-                    label=slabel,
-                )
+                    for ygrid_pred_sample in ygrid_pred:
+                        (p,) = plt.plot(
+                            xgrid[:, idim],
+                            ygrid_pred_sample[:, iout],
+                            "m--",
+                            linewidth=1,
+                            zorder=-10000,
+                        )
+                    lc = lighten_color(p.get_color(), 0.5)
+                    plt.fill_between(
+                        xgrid[:, idim],
+                        ygrid_pred_mb[:, iout] - ygrid_pred_lb[:, iout],
+                        ygrid_pred_mb[:, iout] + ygrid_pred_ub[:, iout],
+                        color=lc,
+                        zorder=-1000,
+                        alpha=0.9,
+                        label=slabel,
+                    )
 
-                plt.legend()
-                plt.xlabel(f"Input # {idim+1}")
-                plt.ylabel(f"Output # {iout+1}")
-                if show_plot:
-                    plt.show()
-                if save_plot:
-                    plt.savefig(
-                        "fit_d"
-                        + str(idim)
-                        + "_o"
-                        + str(iout)
-                        + "_"
-                        + name_postfix
-                        + ".png"
+                    plt.legend()
+                    plt.xlabel(f"Input # {idim+1}")
+                    plt.ylabel(f"Output # {iout+1}")
+                    if show_plot:
+                        plt.show()
+                    if save_plot:
+                        plt.savefig(
+                            "fit_d"
+                            + str(idim)
+                            + "_o"
+                            + str(iout)
+                            + "_"
+                            + name_postfix
+                            + ".png"
+                        )
+                    plt.clf()
+            elif ax is not None:
+                for iout in range(nout):
+                    for j in range(nlist):
+                        xx = xx_list[j]
+                        yy = yy_list[j]
+
+                        ax.plot(
+                            xx[:, idim],
+                            yy[:, iout],
+                            colors[j] + "o",
+                            markersize=11,
+                            markeredgecolor="w",
+                            label=labels[j],
+                            zorder=1000,
+                        )
+
+                    if true_model is not None:
+                        true = true_model(xgrid, 0.0)
+                        ax.plot(
+                            xgrid[:, idim],
+                            true[:, iout],
+                            "k-",
+                            label="Truth",
+                            alpha=0.5,
+                        )
+
+                    (p,) = ax.plot(
+                        xgrid[:, idim],
+                        ygrid_pred_mb[:, iout],
+                        "m-",
+                        linewidth=5,
+                        label=mlabel,
                     )
-                plt.clf()
+
+                    lc = lighten_color(p.get_color(), 0.5)
+                    ax.fill_between(
+                        xgrid[:, idim],
+                        ygrid_pred_mb[:, iout] - ygrid_pred_lb[:, iout],
+                        ygrid_pred_mb[:, iout] + ygrid_pred_ub[:, iout],
+                        color=lc,
+                        zorder=-1000,
+                        alpha=0.9,
+                        label=slabel,
+                    )
