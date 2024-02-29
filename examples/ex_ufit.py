@@ -4,7 +4,7 @@ import sys
 import torch
 import numpy as np
 
-from quinn.mcmc.mcmc import MCMC_NN
+from quinn.solvers.nn_mcmc import NN_MCMC
 from quinn.vi.vi import VI_NN
 from quinn.ens.ens import Ens_NN
 
@@ -98,7 +98,7 @@ def main():
 
     if meth == 'mcmc':
         nmc = 100
-        uqnet = MCMC_NN(nnet, verbose=True)
+        uqnet = NN_MCMC(nnet, verbose=True)
         uqnet.fit(xtrn, ytrn, zflag=False, datanoise=datanoise, gamma=0.01, nmcmc=10000)
     elif meth == 'vi':
         nmc = 111

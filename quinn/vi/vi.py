@@ -7,7 +7,7 @@ import torch
 
 from .rvs import Gaussian, GMM2
 
-from ..quinn import QUiNNBase
+from ..solvers.quinn import QUiNNBase
 from ..nns.tchutils import npy, tch, print_nnparams, nnfit
 from ..nns.nnwrap import nn_p, NNWrap
 

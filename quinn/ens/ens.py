@@ -4,7 +4,7 @@
 import numpy as np
 
 from .learner import Learner
-from ..quinn import QUiNNBase
+from ..solvers.quinn import QUiNNBase
 
 class Ens_NN(QUiNNBase):
     """Deep Ensemble NN Wrapper.

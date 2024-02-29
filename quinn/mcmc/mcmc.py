@@ -6,166 +6,87 @@ import copy
 import numpy as np
 from scipy.optimize import minimize
 
-from .admcmc import AMCMC
-from ..quinn import QUiNNBase
 from ..nns.nnwrap import nn_p, NNWrap
 
 
-class MCMC_NN(QUiNNBase):
-    """MCMC NN wrapper class.
+class MCMCBase(object):
+    """Base class for calibration."""
 
-    Attributes:
-        lpinfo (dict): Dictionary that holds likelihood computation necessary information.
-        pdim (int): Dimensonality `d` of chain.
-        verbose (bool): Whether to be verbose or not.
-        samples (np.ndarray): MCMC samples of all parameters, size `(M,d)`.
-        cmode (np.ndarray): MAP values of all parameters, size `M`.
-    """
+    def __init__(self):
+        """Dummy instantiation."""
+        self.logPost = None
+        self.logPostGrad = None
+        self.postInfo = {}
 
-    def __init__(self, nnmodel, verbose=True):
-        """Initialization.
 
-        Args:
-            nnmodel (torch.nn.Module): PyTorch NN model.
-            verbose (bool, optional): Verbose or not.
-        """
-        super().__init__(nnmodel)
-        self.verbose = verbose
-        self.pdim = sum(p.numel() for p in self.nnmodel.parameters())
-        print("Number of parameters:", self.pdim)
+    def setLogPost(self, logPost, logPostGrad, **postInfo):
+        self.logPost = logPost
+        self.logPostGrad = logPostGrad
+        self.postInfo = postInfo
 
-        if self.verbose:
-            self.print_params(names_only=True)
 
-        self.samples = None
-        self.cmode = None
 
-    def logpost(self, modelpars):
-        """Function that computes log-posterior given model parameters.
+    def run(self, nmcmc, param_ini):
+        """Markov chain Monte Carlo.
 
         Args:
-            modelpars (np.ndarray): Log-posterior input parameters.
+            logpostFcn (callable): Log-posterior evaluator function.
+            **postInfo: All information needed for log-posterior evaluation.
 
         Returns:
-            float: log-posterior value.
+            dict: Dictionary of results. Keys are 'chain' (chain samples array), 'mapparams' (MAP parameters array), 'maxpost' (maximal log-post value), 'accrate' (acceptance rate)
         """
-        # Model prediction
-        ypred = self.lpinfo['model'](modelpars, self.lpinfo['xd'], self.lpinfo['otherpars'])
-        # Data
-        ydata = self.lpinfo['yd']
-        nd = len(ydata)
-        if self.lpinfo['ltype'] == 'classical':
-            lpostm = 0.0
-            for i in range(nd):
-                for yy in ydata[i]:
-                    lpostm -= 0.5 * np.sum((ypred[i]-yy)**2)/self.lpinfo['lparams']['sigma']**2
-                    lpostm -= 0.5 * np.log(2 * np.pi)
-                    lpostm -= np.log(self.lpinfo['lparams']['sigma'])
-        else:
-            print('Likelihood type is not recognized. Exiting')
-            sys.exit()
+        assert(self.logPost is not None)
+        cdim = len(param_ini)            # chain dimensionality
+        samples = []  # MCMC samples
+        alphas = [] # Store alphas (posterior ratios)
+        logposts = []  # Log-posterior values]
+        na = 0                        # counter for accepted steps
 
-        return lpostm
+        current = param_ini.copy()                # first step
+        current_U = -self.logPost(current, **self.postInfo)  # NEGATIVE logposterior
+        pmode = -current_U  # record MCMC 'mode', which is the current MAP value (maximum posterior)
+        cmode = current  # MAP sample
 
-    def fit(self, xtrn, ytrn, zflag=True, datanoise=0.05, nmcmc=6000, gamma=0.1, param_ini=None, cov_ini=None, t0=100, tadapt=1000):
-        r"""Fit function that perfoms MCMC on NN parameters.
+        samples.append(current)
+        logposts.append(-current_U)
+        alphas.append(0.0)
 
-        Args:
-            xtrn (np.ndarray): Input data array `x` of size `(N,d)`.
-            ytrn (np.ndarray): Output data array `y` of size `(N,o)`.
-            zflag (bool, optional): Whether to precede MCMC with a LBFGS optimization. Default is True.
-            datanoise (float, optional): Datanoise size. Defaults to 0.05.
-            nmcmc (int, optional): Number of MCMC steps, `M`.
-            gamma (float, optional): Proposal jump size factor :math:`\gamma`. Defaults to 0.1.
-            param_ini (None, optional): Initial parameter array of size `p`. Default samples randomly.
-            cov_ini (None, optional): Initial covariance array of size `(p,p)`. Default generates initial diagonal covariance that is a 0.01 factor of initial parameters (with a cushion to avoid zero variance).
-            t0 (int, optional): Step where adaptivity begins. Defaults to 100.
-            tadapt (int, optional): Adapt/update covariance every `tadapt` steps. Defaults to 1000.
-        """
-        shape_xtrn = xtrn.shape
-        ntrn = shape_xtrn[0]
-        ntrn_, outdim = ytrn.shape
+        # Loop over MCMC steps
+        for imcmc in range(nmcmc):
+            current_proposal, current_K, proposed_K = self.sampler(current, imcmc)
 
-        # Set dictionary info for posterior computation
-        self.lpinfo = {'model': nn_p,
-                  'xd': xtrn, 'otherpars': self.nnmodel, 'yd': [y for y in ytrn],
-                  'ltype': 'classical',
-                  'lparams': {'sigma': datanoise}}
+            proposed_U = -self.logPost(current_proposal, **self.postInfo)
+            proposed_H = proposed_U + proposed_K
+            current_H = current_U + current_K
 
-        if param_ini is None:
-            param_ini = np.random.rand(self.pdim)  # initial parameter values
-            if zflag:
-                res = minimize((lambda x, fcn: -fcn(x)), param_ini, args=(self.logpost,), method='BFGS',options={'gtol': 1e-13})
-                param_ini = res.x
-        if cov_ini is None:
-            cov_ini = np.diag(0.01*np.abs(param_ini+1.e-3)) # initial covariance
+            mh_prob = np.exp(current_H - proposed_H)
 
+            # Accept...
+            if np.random.random_sample() < mh_prob:
+                na += 1  # Acceptance counter
+                current = current_proposal.copy()
+                current_U = proposed_U.copy()
+                if -current_U >= pmode:
+                    pmode = -current_U
+                    cmode = current.copy()
 
-        my_amcmc = AMCMC()
-        my_amcmc.setParams(param_ini, cov_ini,
-                           t0=t0, tadapt=tadapt, gamma=gamma, nmcmc=nmcmc)
+            samples.append(current)
+            alphas.append(mh_prob)
+            logposts.append(-current_U)
 
-        mcmc_results = my_amcmc.run(self.logpost)
-        self.samples, self.cmode, pmode, acc_rate = mcmc_results['chain'], mcmc_results['mapparams'], mcmc_results['maxpost'], mcmc_results['accrate']
+            acc_rate = float(na) / (imcmc+1)
 
+            if((imcmc + 2) % (nmcmc / 10) == 0) or imcmc == nmcmc - 2:
+                print('%d / %d completed, acceptance rate %lg' % (imcmc + 2, nmcmc, acc_rate))
 
-    def get_best_model(self, param):
-        """Creates a PyTorch NN module with parameters set to a given flattened parameter array.
+        results = {
+            'chain' : np.array(samples),
+            'mapparams' : cmode,
+            'maxpost' : pmode,
+            'accrate' : acc_rate,
+            'logpost' : np.array(logposts),
+            'alphas' : np.array(alphas)
+            }
 
-        Args:
-            param (np.ndarray): A flattened weight parameter vector.
-
-        Returns:
-            torch.nn.Module: PyTorch NN module with the given parameters.
-        """
-        nnw = NNWrap(self.nnmodel)
-        nnw.p_unflatten(param)
-
-        return copy.deepcopy(nnw.nnmodel)
-
-
-    def predict_MAP(self, x):
-        """Predict with the max a posteriori (MAP) parameter setting.
-
-        Args:
-            x (np.ndarray): Input array of size `(N,d)`.
-
-        Returns:
-            np.ndarray: Outpur array of size `(N,o)`.
-        """
-        return nn_p(self.cmode, x, self.nnmodel)
-
-    def predict_sample(self, x, param):
-        """Predict with a given parameter array.
-
-        Args:
-            x (np.ndarray): Input array of size `(N,d)`.
-            param (np.ndarray): Flattened weight parameter array.
-
-        Returns:
-            np.ndarray: Outpur array of size `(N,o)`.
-        """
-        return nn_p(param, x, self.nnmodel)
-
-    def predict_ens(self, x, nens=10, nburn=1000):
-        """Summary
-
-        Args:
-            x (np.ndarray): `(N,d)` input array.
-            nens (int, optional): Number of ensemble members requested, `M`. Defaults to 10.
-            nburn (int, optional): Burn-in for the MCMC chain. Defaults to 1000.
-
-        Returns:
-            np.ndarray: Array of size `(M, N, o)`, i.e. `M` random samples of `(N,o)` outputs.
-
-        Note:
-            This overloads QUiNN's base predict_ens functions
-        """
-        nevery = int((self.samples.shape[0]-nburn)/nens)
-        for j in range(nens):
-            yy = self.predict_sample(x, self.samples[nburn+j*nevery,:])
-            if j == 0:
-                y = np.empty((nens, yy.shape[0], yy.shape[1]))
-            y[j, :, :] = yy
-        return y
-
+        return results

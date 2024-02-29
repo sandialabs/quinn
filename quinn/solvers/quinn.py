@@ -6,10 +6,10 @@ import functools
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .utils.plotting import plot_dm, lighten_color
-from .utils.maps import scale01ToDom
-from .utils.stats import get_stats, get_domain
-from .nns.tchutils import print_nnparams
+from ..utils.plotting import plot_dm, lighten_color
+from ..utils.maps import scale01ToDom
+from ..utils.stats import get_stats, get_domain
+from ..nns.tchutils import print_nnparams
 
 
 class QUiNNBase():
