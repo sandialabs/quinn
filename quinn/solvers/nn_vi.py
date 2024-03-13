@@ -5,13 +5,13 @@ import copy
 import math
 import torch
 
-from .rvs import Gaussian, GMM2
+from ..rvar.rvs import Gaussian, GMM2
 
 from ..solvers.quinn import QUiNNBase
 from ..nns.tchutils import npy, tch, print_nnparams, nnfit
 from ..nns.nnwrap import nn_p, NNWrap
 
-class VI_NN(QUiNNBase):
+class NN_VI(QUiNNBase):
     """VI wrapper class.
 
     Attributes:

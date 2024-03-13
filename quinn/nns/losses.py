@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import torch
+import numpy as np
+from .tchutils import tch
 
 class CustomLoss(torch.nn.Module):
     """Example of custom loss function, including derivative contraints.
@@ -46,6 +48,48 @@ class CustomLoss(torch.nn.Module):
         else:
             reg = 0.0
         return loss+100.*reg
+
+class Loss_Gaussian(torch.nn.Module):
+    """Example of custom loss function, including derivative contraints.
+
+    Attributes:
+        model (callable): Model evaluator.
+        lam (torch.float): Penalty strength.
+    """
+
+    def __init__(self, model, sigma):
+        """Initialization
+
+        Args:
+            model : torch module
+            sigma : data noise
+        """
+        super().__init__()
+        self.model = model
+        self.sigma = tch(float(sigma), rgrad=False)
+        self.pi = tch(np.pi, rgrad=False)
+
+    def forward(self, inputs, targets):
+        """Forward function.
+
+        Args:
+            inputs (torch.Tensor): Input tensor.
+            targets (torch.Tensor): Target tensor.
+
+
+        Returns:
+            float: Loss value.
+        """
+
+        #if requires_grad: TODO: need to differentiate when loss gradient is needed or not, to avoide extra work
+        predictions = self.model(inputs)  # , type_="torch")
+        part1 = 0.5 * torch.sum(torch.pow(targets - predictions, 2)) / self.sigma**2
+        part2 = (len(inputs) / 2) * torch.log(2 * self.pi)
+        part2 += len(inputs) * torch.log(self.sigma)
+        return part1 + part2
+        # else:
+        #     with torch.no_grad():
+
 
 
 

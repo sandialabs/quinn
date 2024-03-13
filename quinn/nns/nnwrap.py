@@ -25,6 +25,10 @@ class NNWrap():
         self.indices = None
         _ = self.p_flatten()
 
+    def reinitialize_instance(self):
+        self.nnmodel.reinitialize_instance()
+
+
     def __call__(self, x):
         """Calling the wrapper function.
 
@@ -40,6 +44,21 @@ class NNWrap():
             device = 'cpu'
 
         return npy(self.nnmodel.forward(tch(x, device=device)))
+
+    def predict(self, x_in, weights):
+        """Model prediction given new weights.
+        ----------
+        Args:
+            - x (np.ndarray): A numpy input array of size `(N,d)`.
+            - weights (np.ndarray): flattened parameter vector.
+        ----------
+        Returns:
+            - np.ndarray: A numpy output array of size `(N,o)`.
+        """
+        x_in = tch(x_in)
+        self.p_unflatten(weights)
+        y_out = self.nnmodel(x_in).detach().numpy()
+        return y_out
 
     def p_flatten(self):
         """Flattens all parameters into an array.
@@ -84,6 +103,66 @@ class NNWrap():
             p.data = ll[i]
 
         return ll
+
+
+    def calc_loss(self, weights, loss_fn, inputs, targets):
+        """Calculates the loss given a loss function.
+        ----------
+        Args:
+            - weights (numpy.ndarray): weights of the model.
+            - loss_fn (torch.nn.Module): pytorch module calculating the loss
+            given the following args:
+                - model (NNWrap class): model from which the parameters are
+                taken.
+                - inputs (numpy.ndarray): data that is input in the model.
+                - target (numpy.ndarray): data corresponding to the output of
+                the model.
+                - requires_grad (bool): whether we will need to compute the
+                gradients with respect to the log posterior
+            - input (numpy.ndarray): input to the model.
+            - target (numpy.ndarray): targets of the output of the model.
+        ---------
+        Returns:
+            - loss (float): loss of the model given the data.
+        """
+        inputs = tch(inputs, rgrad=False)
+        targets = tch(targets, rgrad=False)
+        self.p_unflatten(weights)
+        loss = loss_fn(inputs, targets)
+        return loss.item()
+
+    def calc_lossgrad(self, weights, loss_fn, inputs, targets):
+        """Calculates the gradients of the loss given a loss function w.r.t. the
+        model parameters.
+        ----------
+        Args:
+            - weights (numpy.ndarray): weights of the model.
+            - loss_fn (torch.nn.Module): pytorch module calculating the loss
+            given the following args:
+                - model (NNWrap class): model from which the parameters are
+                taken.
+                - inputs (numpy.ndarray): data that is input in the model.
+                - target (numpy.ndarray): data corresponding to the output of
+                the model.
+                - requires_grad (bool): whether we will need to compute the
+                gradients with respect to the log posterior
+            - input (numpy.ndarray): input to the model.
+            - target (numpy.ndarray): targets of the output of the model.
+        ---------
+        Returns:
+            - np.ndarray: A numpy array of the loss w.r.t. the gradients of the
+            model parameters.
+        """
+        inputs = tch(inputs, rgrad=False)
+        targets = tch(targets, rgrad=False)
+        self.p_unflatten(weights)
+        loss = loss_fn(inputs, targets)
+        loss.backward()
+        gradients = []
+        for p in self.nnmodel.parameters():
+            gradients.append(npy(p.grad).flatten())
+            p.grad = None
+        return np.concatenate(gradients, axis=0)
 
 ###############################################################
 ###############################################################

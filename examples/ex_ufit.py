@@ -5,7 +5,7 @@ import torch
 import numpy as np
 
 from quinn.solvers.nn_mcmc import NN_MCMC
-from quinn.vi.vi import VI_NN
+from quinn.solvers.nn_vi import NN_VI
 from quinn.ens.ens import Ens_NN
 
 from quinn.func.funcs import Ackley, Sine, Sine10, blundell
@@ -58,7 +58,7 @@ def main():
 
     # Function domain
     domain = np.tile(np.array([-np.pi, np.pi]), (ndim, 1))
-    np.random.seed(1)
+    np.random.seed(111)
 
     # Get x data
     xall = scale01ToDom(np.random.rand(nall, ndim), domain)
@@ -96,13 +96,19 @@ def main():
     ytrn, yval = yall[indtrn, :], yall[indval, :]
 
 
-    if meth == 'mcmc':
+    if meth == 'amcmc':
         nmc = 100
         uqnet = NN_MCMC(nnet, verbose=True)
-        uqnet.fit(xtrn, ytrn, zflag=False, datanoise=datanoise, gamma=0.01, nmcmc=10000)
+        sampler_params = {'gamma': 0.01}
+        uqnet.fit(xtrn, ytrn, zflag=False, datanoise=datanoise, nmcmc=10000, sampler='amcmc', sampler_params=sampler_params)
+    elif meth == 'hmc':
+        nmc = 100
+        uqnet = NN_MCMC(nnet, verbose=True)
+        sampler_params = {'L': 3, 'epsilon': 0.0025}
+        uqnet.fit(xtrn, ytrn, zflag=False, datanoise=datanoise, nmcmc=10000, sampler='hmc', sampler_params=sampler_params)
     elif meth == 'vi':
         nmc = 111
-        uqnet = VI_NN(nnet, verbose=True)
+        uqnet = NN_VI(nnet, verbose=True)
         uqnet.fit(xtrn, ytrn, val=[xval, yval], datanoise=datanoise, lrate=0.01, batch_size=None, nsam=1, nepochs=5000)
     elif meth == 'ens':
         nmc = 3

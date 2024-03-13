@@ -65,11 +65,11 @@ class MCMCBase(object):
             # Accept...
             if np.random.random_sample() < mh_prob:
                 na += 1  # Acceptance counter
-                current = current_proposal.copy()
-                current_U = proposed_U.copy()
+                current = current_proposal + 0.0
+                current_U = proposed_U + 0.0
                 if -current_U >= pmode:
                     pmode = -current_U
-                    cmode = current.copy()
+                    cmode = current + 0.0
 
             samples.append(current)
             alphas.append(mh_prob)
