@@ -10,7 +10,7 @@ from ..mcmc.admcmc import AMCMC
 from ..mcmc.hmc import HMC
 from .quinn import QUiNNBase
 from ..nns.nnwrap import nn_p, NNWrap
-from ..nns.losses import Loss_Gaussian
+from ..nns.losses import NegLogPost
 from ..nns.tchutils import tch, npy
 
 class NN_MCMC(QUiNNBase):
@@ -52,20 +52,20 @@ class NN_MCMC(QUiNNBase):
             float: log-posterior value.
         """
         model = NNWrap(self.nnmodel)
-        #model.p_unflatten(modelpars)
+        model.p_unflatten(modelpars)
 
 
         # Data
         ydata = lpinfo['yd']
         nd = len(ydata)
         if lpinfo['ltype'] == 'classical':
-            loss = Loss_Gaussian(self.nnmodel, lpinfo['lparams']['sigma'])
-            #lpostm = - npy(loss(tch(lpinfo['xd'], rgrad=False), tch(ydata, rgrad=False), requires_grad=False))
+            loss = NegLogPost(self.nnmodel, nd, lpinfo['lparams']['sigma'], None)
+
             lpostm = - model.calc_loss(modelpars, loss, lpinfo['xd'], ydata)
 
 
         else:
-            print('Likelihood type is not recognized. Exiting')
+            print('Likelihood type is not recognized. Exiting.')
             sys.exit()
 
         return lpostm
@@ -80,14 +80,14 @@ class NN_MCMC(QUiNNBase):
             float: log-posterior value.
         """
         model = NNWrap(self.nnmodel)
-        #model.p_unflatten(modelpars)
+        model.p_unflatten(modelpars)
 
 
         # Data
         ydata = lpinfo['yd']
         nd = len(ydata)
         if lpinfo['ltype'] == 'classical':
-            loss = Loss_Gaussian(self.nnmodel, lpinfo['lparams']['sigma'])
+            loss = NegLogPost(self.nnmodel, nd, lpinfo['lparams']['sigma'], None)
             #lpostm = - npy(loss(tch(lpinfo['xd'], rgrad=False), tch(ydata, rgrad=False), requires_grad=False))
             lpostm = - model.calc_lossgrad(modelpars, loss, lpinfo['xd'], ydata)
 

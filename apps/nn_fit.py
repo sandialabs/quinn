@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 
 from quinn.solvers.nn_mcmc import NN_MCMC
 from quinn.solvers.nn_vi import NN_VI
-
-from quinn.ens.ens import Ens_NN
+from quinn.solvers.nn_ens import NN_Ens
+from quinn.solvers.nn_rms import NN_RMS
 
 from quinn.utils.stats import get_domain
 from quinn.utils.maps import scale01ToDom
@@ -133,7 +133,15 @@ elif method == 'vi':
     uqnet.fit(xtrn, ytrn, val=[xval, yval], datanoise=0.01, lrate=0.01, batch_size=None, nsam=1, nepochs=5000)
 elif method == 'ens':
     nmc = 13
-    uqnet = Ens_NN(nnet, nens=nmc, dfrac=0.8, verbose=True)
+    uqnet = NN_Ens(nnet, nens=nmc, dfrac=0.8, verbose=True)
+    uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
+elif method == 'rms':
+    nmc = 7
+    uqnet = NN_RMS(nnet, nens=nmc, dfrac=0.8, verbose=True, datanoise=0.1, priorsigma=0.1)
+    uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
+elif meth == 'laplace':
+    nmc = 3
+    uqnet = NN_Laplace(nnet, nens=nmc, dfrac=1.0, verbose=True, la_type='full')
     uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
 else:
     print(f"UQ Method {method} is unknown. Exiting.")

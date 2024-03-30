@@ -1,18 +1,11 @@
 vi
 ------------------
 
-vi
-===
-.. automodule:: quinn.vi.vi
+bnet
+=======
+.. automodule:: quinn.vi.bnet
     :members:
     :undoc-members:
     :no-private-members:
     :show-inheritance:
-
-rvs
-===
-.. automodule:: quinn.vi.rvs
-    :members:
-    :undoc-members:
-    :no-private-members:
-    :show-inheritance:
+    

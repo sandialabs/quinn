@@ -15,6 +15,7 @@ Quantification of Uncertainties in Neural Networks (QUiNN) is a python library c
 
 # Authors
 	Khachik Sargsyan
+	Javier Murgoitio-Esandi
  	Oscar Diaz-Ibarra
   
 # Acknowledgements

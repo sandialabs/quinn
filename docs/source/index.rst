@@ -8,13 +8,13 @@ QUiNN's documentation
    :maxdepth: 4
    :caption: List of modules:
 
-   quinn.rst
+   solvers.rst
    nns.rst
-   ens.rst
    mcmc.rst
-   vi.rst
    utils.rst
    func.rst
+   rvar.rst
+   vi.rst
 ..   tests.rst
 
 .. toctree::
@@ -34,6 +34,7 @@ QUiNN's documentation
    :maxdepth: 4
    :caption: Misc:
 
+   diagram.rst
    ind.rst
    refs.rst
 

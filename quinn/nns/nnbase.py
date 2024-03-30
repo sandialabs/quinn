@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 import torch
 torch.set_default_dtype(torch.double)
 
-from .tchutils import npy, tch, nnfit
+from .tchutils import npy, tch
+from ..nns.nnfit import nnfit
 
 from ..utils.stats import get_domain
 from ..utils.plotting import plot_dm

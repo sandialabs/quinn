@@ -1,6 +1,9 @@
-quinn
-=====
-.. automodule:: quinn.quinn
+rvar
+------------------
+
+rvs
+===
+.. automodule:: quinn.rvar.rvs
     :members:
     :undoc-members:
     :no-private-members:

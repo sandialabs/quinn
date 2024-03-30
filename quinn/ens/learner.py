@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-"""Module for Learner class."""
+"""Module for a Learner class that is a wrapper with basic training/prediction functionality."""
 
 import math
 import copy
 
-from ..nns.tchutils import npy, tch, nnfit, print_nnparams
+from ..nns.tchutils import npy, tch, print_nnparams
+from ..nns.nnfit import nnfit
 
 class Learner():
     """A learner class that holds PyTorch NN module and helps train it.
@@ -45,6 +46,8 @@ class Learner():
 
     def init_params(self):
         """An example of random initialization of parameters.
+
+        .. todo:: we can and should enrich this.
         """
         for p in self.nnmodel.parameters():
             try:
@@ -66,6 +69,7 @@ class Learner():
         else:
             fit_info = nnfit(self.nnmodel, xtrn, ytrn, **kwargs)
             self.best_model = fit_info['best_nnmodel']
+
         self.trained = True
 
     def predict(self, x):
@@ -78,10 +82,12 @@ class Learner():
             np.ndarray: Output array of size `(N,o)`.
         """
         assert(self.trained)
+
         try:
             device = self.best_model.device
         except AttributeError:
             device = 'cpu'
 
         y = self.best_model(tch(x, rgrad=False, device=device))
+
         return npy(y)

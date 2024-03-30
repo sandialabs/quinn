@@ -47,11 +47,11 @@ class NNWrap():
 
     def predict(self, x_in, weights):
         """Model prediction given new weights.
-        ----------
+
         Args:
             - x (np.ndarray): A numpy input array of size `(N,d)`.
             - weights (np.ndarray): flattened parameter vector.
-        ----------
+
         Returns:
             - np.ndarray: A numpy output array of size `(N,o)`.
         """
@@ -107,7 +107,7 @@ class NNWrap():
 
     def calc_loss(self, weights, loss_fn, inputs, targets):
         """Calculates the loss given a loss function.
-        ----------
+
         Args:
             - weights (numpy.ndarray): weights of the model.
             - loss_fn (torch.nn.Module): pytorch module calculating the loss
@@ -121,20 +121,21 @@ class NNWrap():
                 gradients with respect to the log posterior
             - input (numpy.ndarray): input to the model.
             - target (numpy.ndarray): targets of the output of the model.
-        ---------
+
         Returns:
             - loss (float): loss of the model given the data.
         """
         inputs = tch(inputs, rgrad=False)
         targets = tch(targets, rgrad=False)
-        self.p_unflatten(weights)
+        self.p_unflatten(weights)# TODO: this is not always necessary if loss_fn already incorporates the weights?
+
         loss = loss_fn(inputs, targets)
         return loss.item()
 
     def calc_lossgrad(self, weights, loss_fn, inputs, targets):
         """Calculates the gradients of the loss given a loss function w.r.t. the
         model parameters.
-        ----------
+
         Args:
             - weights (numpy.ndarray): weights of the model.
             - loss_fn (torch.nn.Module): pytorch module calculating the loss
@@ -155,7 +156,8 @@ class NNWrap():
         """
         inputs = tch(inputs, rgrad=False)
         targets = tch(targets, rgrad=False)
-        self.p_unflatten(weights)
+        self.p_unflatten(weights) # TODO: this is not always necessary if loss_fn already incorporates the weights?
+
         loss = loss_fn(inputs, targets)
         loss.backward()
         gradients = []
@@ -164,6 +166,80 @@ class NNWrap():
             p.grad = None
         return np.concatenate(gradients, axis=0)
 
+
+    def calc_hess_full(self, weigths_map, loss_func, inputs, targets):
+        """
+        Calculates the hessian of the loss with respect to the model parameters by
+        first calculating the gradient of the loss and then calculating the gradient
+        of each of the elements of the first gradient.
+
+        Inputs:
+        - model (NNWrapp_Torch class instance): model over whose parameters we are
+        calculating the posterior.
+        - weights_map (torch.Tensor): weights of the MAP of the log_posterior given
+        by the image.
+        - loss_func: function that calculates the negative of the log posterior
+        given the model, the training data (x and y) and requires_grad to indicate that
+        gradients will be calculated.
+        - x_train (numpy.ndarray or torch.Tensor): input part of the training data.
+        - y_train (numpy.ndarray or torch.Tensor): target part of the training data.
+        --------
+        Outputs:
+        - (torch.Tensor) Hessian of the loss with respect to the model parameters.
+
+        """
+        inputs = tch(inputs, rgrad=False)
+        targets = tch(targets, rgrad=False)
+        self.p_unflatten(weigths_map) # TODO: this is not always necessary if loss_fn already incorporates the weights?
+
+        # Calculate the gradient
+        loss = loss_func(inputs, targets)
+        # loss.backward()
+        # gradients = []
+        # for p in self.nnmodel.parameters():
+        #     gradients.append(npy(p.grad).flatten())
+        #     p.grad = None
+        # gradients = np.concatenate(gradients, axis=0)
+
+        gradients = torch.autograd.grad(
+            loss, loss_func.nnmodel.parameters(), create_graph=True, retain_graph=True
+        )
+        gradients = [gradient.flatten() for gradient in gradients]
+
+        hessian_rows = []
+        # Calculate the gradient of the elements of the gradient
+        for gradient in gradients:
+            for j in range(gradient.size(0)):
+                hessian_rows.append(
+                    torch.autograd.grad(gradient[j], self.nnmodel.parameters(), retain_graph=True)
+                )
+        hessian_mat = []
+        # Shape the Hessian to a 2D tensor
+        for i in range(len(hessian_rows)):
+            row_hessian = []
+            for gradient in hessian_rows[i]:
+                row_hessian.append(gradient.flatten().unsqueeze(0))
+            hessian_mat.append(torch.cat(row_hessian, dim=1))
+        hessian_mat = torch.cat(hessian_mat, dim=0)
+        return hessian_mat.detach().numpy()
+
+
+    def calc_hess_diag(self, weigths_map, loss_func, inputs, targets):
+
+        inputs = tch(inputs, rgrad=False)
+        targets = tch(targets, rgrad=False)
+        self.p_unflatten(weigths_map) # TODO: this is not always necessary if loss_fn already incorporates the weights?
+
+        # Calculate the gradient
+        gradient_list = []
+        for input_, target_ in zip(inputs, targets):
+            loss = loss_func(input_, target_)
+
+            gradients = torch.autograd.grad(loss, self.nnmodel.parameters(), create_graph=True, retain_graph=True)
+            gradient_list.append(torch.cat([gradient.flatten() for gradient in gradients]).unsqueeze(0))
+        diag_fim = torch.cat(gradient_list, dim=0).pow(2).mean(0)
+
+        return torch.diag(diag_fim).detach().numpy()
 ###############################################################
 ###############################################################
 ###############################################################

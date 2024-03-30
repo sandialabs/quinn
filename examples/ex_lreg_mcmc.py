@@ -4,13 +4,10 @@ import sys
 import torch
 import numpy as np
 
-from quinn.mcmc.mcmc import MCMC_NN
-from quinn.vi.vi import VI_NN
-from quinn.ens.ens import Ens_NN
+from quinn.solvers.nn_mcmc import NN_MCMC
 
-from quinn.func.funcs import Ackley, Sine, Sine10, blundell
+from quinn.func.funcs import Sine
 from quinn.nns.nns import Polynomial
-from quinn.nns.tchutils import print_nnparams
 
 from quinn.utils.plotting import myrc, plot_xrv, plot_yx, plot_tri, plot_pdfs
 from quinn.utils.maps import scale01ToDom
@@ -76,9 +73,10 @@ def main():
 
 
     nmcmc = 10000
-    uqnet = MCMC_NN(nnet, verbose=True)
-    uqnet.fit(xtrn, ytrn, zflag=False, datanoise=datanoise,
-              gamma=0.1, nmcmc=nmcmc)
+    uqnet = NN_MCMC(nnet, verbose=True)
+    sampler_params = {'L': 3, 'epsilon': 0.0025}
+    uqnet.fit(xtrn, ytrn, zflag=False, datanoise=datanoise, nmcmc=nmcmc, sampler='hmc', sampler_params=sampler_params)
+
 
     # Prepare lists of inputs and outputs for plotting
     xx_list = [xtrn, xval]

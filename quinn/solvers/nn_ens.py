@@ -3,10 +3,10 @@
 
 import numpy as np
 
-from .learner import Learner
-from ..solvers.quinn import QUiNNBase
+from ..ens.learner import Learner
+from .quinn import QUiNNBase
 
-class Ens_NN(QUiNNBase):
+class NN_Ens(QUiNNBase):
     """Deep Ensemble NN Wrapper.
 
     Attributes:
@@ -109,3 +109,11 @@ class Ens_NN(QUiNNBase):
 
         return y_all
 
+    def predict_ens_fromsamples(self, x, nens=1):
+
+        y_all = []
+        for jens in range(nens):
+            y = self.predict_sample(x)
+            y_all.append(y)
+
+        return y_all

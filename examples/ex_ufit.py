@@ -6,7 +6,10 @@ import numpy as np
 
 from quinn.solvers.nn_mcmc import NN_MCMC
 from quinn.solvers.nn_vi import NN_VI
-from quinn.ens.ens import Ens_NN
+from quinn.solvers.nn_ens import NN_Ens
+from quinn.solvers.nn_rms import NN_RMS
+from quinn.solvers.nn_laplace import NN_Laplace
+from quinn.solvers.nn_swag import NN_SWAG
 
 from quinn.func.funcs import Ackley, Sine, Sine10, blundell
 
@@ -40,7 +43,7 @@ def main():
     print("Using device",device)
 
 
-    nall = 12 # total number of points
+    nall = 15 # total number of points
     trn_factor = 0.9 # which fraction of nall goes to training
     ntst = 13 # separate test set
     ndim = 1 # input dimensionality
@@ -58,7 +61,7 @@ def main():
 
     # Function domain
     domain = np.tile(np.array([-np.pi, np.pi]), (ndim, 1))
-    np.random.seed(111)
+    #np.random.seed(111)
 
     # Get x data
     xall = scale01ToDom(np.random.rand(nall, ndim), domain)
@@ -112,7 +115,20 @@ def main():
         uqnet.fit(xtrn, ytrn, val=[xval, yval], datanoise=datanoise, lrate=0.01, batch_size=None, nsam=1, nepochs=5000)
     elif meth == 'ens':
         nmc = 3
-        uqnet = Ens_NN(nnet, nens=nmc, dfrac=0.8, verbose=True)
+        uqnet = NN_Ens(nnet, nens=nmc, dfrac=0.8, verbose=True)
+        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
+    elif meth == 'rms':
+        nmc = 7
+        uqnet = NN_RMS(nnet, nens=nmc, dfrac=1.0, verbose=True, datanoise=datanoise, priorsigma=0.1)
+        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
+    elif meth == 'laplace':
+        nmc = 3
+        uqnet = NN_Laplace(nnet, nens=nmc, dfrac=1.0, verbose=True, la_type='full')
+        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
+    elif meth == 'swag':
+        nmc = 3
+        uqnet = NN_SWAG(nnet, nens=nmc, dfrac=1.0, verbose=True, k=10,
+            n_steps=12, c=1, cov_type="lowrank", lr_swag=0.01)
         uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
     else:
         print(f"UQ Method {meth} is unknown. Exiting.")

@@ -1,3 +1,3 @@
 #!/usr/bin/env python
 
-from . import learner
+from . import bnet

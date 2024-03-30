@@ -4,19 +4,24 @@
 import math
 import torch
 
-class RV():
-    """Parent class for univariate random variables."""
+
+
+class RV(torch.nn.Module):
+    """Parent class for random variables."""
 
     def __init__(self):
         """Initialization."""
-        pass
-    def sample(self):
+        super().__init__()
+
+
+    def sample(self, num_samples=1):
         """Sampling function.
 
         Raises:
             NotImplementedError: Expected to be implemented in children classes
         """
         raise NotImplementedError
+
     def log_prob(self, x):
         """Evaluate log-probability.
 
@@ -29,7 +34,26 @@ class RV():
 ########################################
 ########################################
 
-class Gaussian(RV):
+
+class MVN(RV):
+    def __init__(self, mean, cov):
+        super().__init__()
+        self.mean = mean
+        self.cov = cov
+        self.distribution = torch.distributions.MultivariateNormal(self.mean, self.cov)
+
+    def sample(self, num_samples):
+        return self.distribution.sample((num_samples,))
+
+    def log_prob(self, x):
+        return self.distribution.log_prob(x)
+
+
+########################################
+########################################
+########################################
+
+class Gaussian_1d(RV):
     r"""One dimensional gaussian random variable.
 
     Attributes:
@@ -107,7 +131,7 @@ class Gaussian(RV):
 ########################################
 ########################################
 
-class GMM2(RV):
+class GMM2_1d(RV):
     """One dimensional gaussian mixture random variable with two gaussians that have zero mean and user-defined standard deviations.
 
     Attributes:
