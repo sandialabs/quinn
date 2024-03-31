@@ -50,9 +50,10 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
+    'sphinx.ext.graphviz',
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.napoleon',
-    'sphinxcontrib.bibtex',
+    'sphinxcontrib.bibtex'
 #    'sphinx.ext.pngmath'
 ]
 # Add any paths that contain templates here, relative to this directory.
@@ -88,8 +89,8 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'classic'
-html_theme = 'sphinx_rtd_theme'
+html_theme = 'classic'
+# html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -230,12 +231,15 @@ html_theme_options = {
 inheritance_node_attrs = dict(shape='ellipse', fontsize=14, height=0.75,
                               color='dodgerblue1', style='filled')
 
-#inheritance_graph_attrs = dict(rankdir="LR", size='"6.0, 8.0"',
-#                               fontsize=14, ratio='compress')
+#inheritance_graph_attrs = dict(rankdir="TB", size='""')
+inheritance_graph_attrs = dict(rankdir="LR", size='"6.0, 8.0"',
+                              fontsize=14, color='dodgerblue1', ratio='compress', style='filled')
 
 autodoc_member_order = 'bysource'
 
 bibtex_bibfiles = ['references.bib']
 bibtex_default_style = 'unsrt'
 bibtex_encoding = 'latin'
+
+graphviz_output_format = 'svg'
 

@@ -15,6 +15,7 @@ QUiNN's documentation
    func.rst
    rvar.rst
    vi.rst
+   ens.rst
 ..   tests.rst
 
 .. toctree::
