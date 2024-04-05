@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 
+import torch
 import functools
 import numpy as np
 import matplotlib.pyplot as plt
 
-import torch
-torch.set_default_dtype(torch.double)
-
 from .tchutils import npy, tch
-from ..nns.nnfit import nnfit
 
+from ..nns.nnfit import nnfit
 from ..utils.stats import get_domain
 from ..utils.plotting import plot_dm
-from ..utils.maps import scaleDomTo01, scale01ToDom
+from ..utils.maps import scale01ToDom
+
+torch.set_default_dtype(torch.double)
 
 class MLPBase(torch.nn.Module):
     """Base class for an MLP architecture.

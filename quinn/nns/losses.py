@@ -18,7 +18,7 @@ class PeriodicLoss(torch.nn.Module):
     The loss function has a form
 
     .. math::
-        \frac{1}{N}||y_{\text{pred}}-y_{\text{target}}||^2 + \frac{\lambda}{N}||\text{model(boundary1)}-\text{model(boundary2)}||^2.
+        \frac{1}{N}||y_{\text{pred}}-y_{\text{target}}||^2 + \frac{\lambda}{N}||M\text{(boundary1)}-M\text{(boundary2)}||^2.
     """
 
     def __init__(self, loss_params):
@@ -122,18 +122,31 @@ class GradLoss(torch.nn.Module):
 ########################################################
 
 class NegLogPost(torch.nn.Module):
-    """Example of custom loss function, including derivative contraints.
+    r"""Negative log-posterior loss function.
 
     Attributes:
-        model (callable): Model evaluator.
-        lam (torch.float): Penalty strength.
+        nnmodel (callable): Model evaluator.
+        priorparams (float): Dictionary of parameters of prior.
+        sigma (float): Likelihood data noise standard deviation.
+        fulldatasize (int): Full datasize. Important for weighting in case likelihood is computed on a batch.
+        pi (float): 3.1415...
+
+    The negative log-posterior has the form:
+
+    .. math::
+        \frac{N}{2}\log{(2\pi\sigma^2)} + \frac{1}{2\sigma^2}||M(x_{\text{train}})-y_{\text{train}}||^2 +
+    .. math::
+        +\frac{N}{N_{\text{full}}} \left(\frac{1}{2\sigma_{\text{prior}}^2}||w-w_{\text{anchor}}||^2 + \frac{K}{2} \log{(2\pi\sigma_{\text{prior}}^2)}\right).
     """
 
     def __init__(self, nnmodel, fulldatasize, sigma, priorparams):
-        """Initialization
+        """Initialization.
 
         Args:
-            sigma : data noise
+            nnmodel (callable): Model evaluator.
+            fulldatasize (int): Full datasize. Important for weighting in case likelihood is computed on a batch.
+            sigma (float): Likelihood data noise standard deviation.
+            priorparams (float): Dictionary of parameters of prior. If None, there will be no prior.
         """
         super().__init__()
         self.nnmodel = nnmodel
@@ -149,7 +162,6 @@ class NegLogPost(torch.nn.Module):
             inputs (torch.Tensor): Input tensor.
             targets (torch.Tensor): Target tensor.
 
-
         Returns:
             float: Loss value.
         """
@@ -163,8 +175,6 @@ class NegLogPost(torch.nn.Module):
             neglogprior_fcn = NegLogPrior(self.priorparams['sigma'], self.priorparams['anchor'])
             neglogpost += len(predictions)*neglogprior_fcn(self.nnmodel)/self.fulldatasize
 
-
-
         return neglogpost
 
 ########################################################
@@ -172,32 +182,40 @@ class NegLogPost(torch.nn.Module):
 ########################################################
 
 class NegLogPrior(torch.nn.Module):
-    """Calculates the probability of the parameters given a Gaussian prior.
+    r"""Calculates a Gaussian negative log-prior.
 
     Attributes:
-        - sigma: the standard deviation of the gaussian prior (same for all
-        parameters). Type: float.
-        - n_params: number of parameters being sampled. Type: int.
-        - pi: number pi. Type: torch.Tensor.
-        - anchor (torch.Tensor): vector parameter sampled from the prior that acts
-        as anchor of the prior calculation.
+        anchor (torch.Tensor): Anchor, i.e. center vector of the gaussian prior.
+        sigma (float): The standard deviation of the gaussian prior (same for all parameters).
+        pi (float): 3.1415..
+
+    The negative log-prior has the form:
+
+    .. math::
+        \frac{1}{2\sigma_{\text{prior}}^2}||w-w_{\text{anchor}}||^2 + \frac{K}{2} \log{(2\pi\sigma_{\text{prior}}^2)}.
     """
 
     def __init__(self, sigma, anchor):
         """
         Args:
-            - sigma: the standard deviation of the gaussian prior (same for
-            all parameters). Type: float.
-            - n_params: number of parameters being sampled. Type: int.
+            sigma (float): The standard deviation of the gaussian prior (same for all parameters).
+            anchor (torch.Tensor): Anchor, i.e. center vector of the gaussian prior.
         """
         super().__init__()
         self.sigma = tch(float(sigma), rgrad=False)
-        self.pi = tch(np.pi, rgrad=False)  # torch.Tensor(tch(np.pi, rgrad=False))
+        self.pi = tch(np.pi, rgrad=False)
         self.anchor = anchor
 
 
     def forward(self, model):
+        """Forward evaluator
 
+        Args:
+            model (torch.nn.Module): The corresponding NN module.
+
+        Returns:
+            float: Negative log-prior value.
+        """
         neglogprior = 0
         i = 0
         for p in model.parameters():
@@ -214,34 +232,41 @@ class NegLogPrior(torch.nn.Module):
 ########################################################
 
 class CustomLoss(torch.nn.Module):
-    """Example of custom loss function, including derivative contraints.
+    r"""Example of custom one-dimensional loss function, including derivative and periodicity contraints. Quite experimental, but a base for developing problem-specific loss functions.
 
     Attributes:
         model (callable): Model evaluator.
-        lam (torch.float): Penalty strength.
+        lam1 (float): Penalty strength for the periodicity constraint.
+        lam2 (float): Penalty strength for the derivative constraint.
+
+    The loss function has a form:
+
+    .. math::
+        \frac{1}{N}||y_{\text{pred}}-y_{\text{target}}||^2 + \lambda_1 (M(0.5)-M(-0.5))^2 + \lambda_2 (M'(0.5)-M'(-0.5))^2
     """
 
     def __init__(self, loss_params):
-        """Initialization
+        """Initialization.
 
         Args:
-            loss_params (tuple): (model, penalty) pair
+            loss_params (tuple): (model, penalty1, penalty2) pair.
         """
         super().__init__()
-        self.model, self.lam = loss_params
+        self.model, self.lam1, self.lam2 = loss_params
 
-    def forward(self, inputs, targets):
+    def forward(self, predictions, targets):
         """Forward function.
 
         Args:
-            inputs (torch.Tensor): Input tensor.
+            predictions (torch.Tensor): Input tensor.
             targets (torch.Tensor): Target tensor.
 
         Returns:
             float: Loss value.
         """
-        tmp = (inputs-targets)**2
-        loss =  torch.mean(tmp)+self.lam * (self.model(torch.Tensor([0.5]))-self.model(torch.Tensor([-0.5])))**2
+        loss =  torch.mean((predictions-targets)**2)
+
+        loss += self.lam1 * (self.model(torch.Tensor([0.5]))-self.model(torch.Tensor([-0.5])))**2
 
         x = torch.Tensor([-0.5, 0.5]).view(-1,1)
         x.requires_grad_()
@@ -256,5 +281,8 @@ class CustomLoss(torch.nn.Module):
             reg = (der[0]-der[1])**2
         else:
             reg = 0.0
-        return loss+100.*reg
+
+        loss += self.lam2*reg
+
+        return loss
 

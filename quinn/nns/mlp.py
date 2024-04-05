@@ -27,7 +27,6 @@ class MLP(MLPBase):
         Args:
             indim (int): Input dimensionality.
             outdim (int): Output dimensionality.
-            device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
             hls (tuple): Tuple of hidden layer widths.
             biasorno (bool): Whether biases are included or not.
             activ (str, optional): Activation function. Options are 'tanh', 'relu', 'sin' or else identity is used.
@@ -35,6 +34,7 @@ class MLP(MLPBase):
             bnlearn (bool): Whether batch normalization is learnable or not.
             dropout (float, optional): Dropout fraction. Default is 0.0.
             final_transform (str, optional): Final transform, if any (onle 'exp' is implemented). Default is None.
+            device (str): It represents where computations are performed and tensors are allocated. Default is cpu.
         """
         super(MLP, self).__init__(indim, outdim, device=device)
 
