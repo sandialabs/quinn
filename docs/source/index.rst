@@ -35,8 +35,8 @@ QUiNN's documentation
    :maxdepth: 4
    :caption: Misc:
 
-   diagram.rst
    ind.rst
    refs.rst
+..   diagram.rst
 
 
