@@ -18,6 +18,7 @@ def tch(arr, device='cpu', rgrad=True):
     Returns:
         torch.Tensor: Torch tensor of the same size as the input numpy array.
     """
+
     # return torch.from_numpy(arr.astype(np.double)).to(device)
     # return torch.from_numpy(arr).double()
     return torch.tensor(arr, requires_grad=rgrad, device=device)
@@ -36,25 +37,25 @@ def npy(arr):
     return arr.cpu().data.numpy()
 
 def print_nnparams(nnmodel, names_only=False):
-        """Print parameter names of a PyTorch NN module and optionally, values.
+    """Print parameter names of a PyTorch NN module and optionally, values.
 
-        Args:
-            nnmodel (torch.nn.Module): The torch NN module.
-            names_only (bool, optional): Print names only. Default is False.
-        """
-        assert(isinstance(nnmodel, torch.nn.Module))
+    Args:
+        nnmodel (torch.nn.Module): The torch NN module.
+        names_only (bool, optional): Print names only. Default is False.
+    """
+    assert(isinstance(nnmodel, torch.nn.Module))
 
-        for name, param in nnmodel.named_parameters():
-            if names_only:
-                print(f"{name}, shape {npy(param.data).shape}")
-            else:
-                print(name, param.data)
+    for name, param in nnmodel.named_parameters():
+        if names_only:
+            print(f"{name}, shape {npy(param.data).shape}")
+        else:
+            print(name, param.data)
 
 def flatten_params(parameters):
     """Flattens all parameters into an array.
 
     Args:
-        parameters (TYPE): Description
+        parameters (torch.nn.Parameters): Description
 
     Returns:
         (torch.Tensor, list[tuple]): A tuple of the flattened (1d) torch tensor and a list of pairs that correspond to start/end indices of the flattened parameters.

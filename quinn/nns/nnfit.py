@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Module for the mother-of-all fit function."""
 
 import sys
 import copy
@@ -10,14 +11,14 @@ from .losses import NegLogPost, GradLoss
 
 
 def nnfit(nnmodel, xtrn, ytrn, val=None,
-          loss_fn='mse', loss_xy=None, datanoise=None, wd=0.0,
+          loss_fn='mse', loss_xy=None,
+          datanoise=None, wd=0.0,
           priorparams=None,
-          optimizer='adam', lrate=0.1, lmbd=None,
+          optimizer='adam',
+          lrate=0.1, lmbd=None, scheduler_lr=None,
           nepochs=5000, batch_size=None,
           gradcheck=False,
-          scheduler_lr=None,
-          cooldown=100,
-          factor=0.95,
+          cooldown=100, factor=0.95,
           freq_out=100, freq_plot=1000, lhist_suffix=''
           ):
     """Generic PyTorch NN fit function that is utilized in appropriate NN classes.
@@ -31,24 +32,22 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
         loss_xy (None, optional): Optionally, a more flexible loss function (e.g. used in variational inference) with signature :math:`\textrm{loss}(x_{pred}, y_{target})`. The default is None, which triggers the use of previous argument, loss_fn.
         datanoise (None, optional): Datanoise for certain loss types.
         wd (float, optional): Optional weight decay (L2 regularization) parameter.
+        priorparams (dict, optional): Dictionary of prior parameters.
         optimizer (str, optional): Optimizer string. Currently implemented 'adam' (default) and 'sgd'.
         lrate (float, optional): Learning rate or learning rate schedule factor. Default is 0.1.
         lmbd (callable, optional): Optional learning rate schedule. The actual learning rate is `lrate * lmbd(epoch)`.
+        scheduler_lr (str, optional): Learning rate is adjusted during training according to a generic pytorch scheduler. Currently only ReduceLROnPlateau is implemented. Conflicts with user-defined lmbd scheduler: need to pick one. Defaults to None, which uses no-schedule lrate.
         nepochs (int, optional): Number of epochs.
         batch_size (int, optional): Batch size. Default is None, i.e. single batch.
         gradcheck (bool, optional): For code verification, whether we want to check the auto-computed gradients against numerically computed ones. Makes the code slow. Experimental - this is not tested enough.
-        scheduler_lr (None, optional): Description
         cooldown (int, optional): cooldown in ReduceLROnPlateau
         factor (float, optional): factor in ReduceLROnPlateau
         freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
         freq_plot (int, optional): Frequency, in epochs, of plotting loss convergence graph. Defaults to 1000.
-        lhist_suffix (str, optional): Optional uffix of loss history figure filename.
+        lhist_suffix (str, optional): Optional suffix of loss history figure filename.
 
     Returns:
         dict: Dictionary of the results. Keys 'best_fepoch', 'best_epoch', 'best_loss', 'best_nnmodel', 'history'.
-
-    Deleted Parameters:
-        scheduler_lr(str, optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch.
     """
 
     ntrn = xtrn.shape[0]
@@ -77,8 +76,8 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
 
     # Learning rate schedule
     if scheduler_lr == "ReduceLROnPlateau" and not lmbd is None:
-            print(f"Trying to use two schedulers. Exiting.")
-            sys.exit()    
+        print(f"Trying to use two schedulers. Exiting.")
+        sys.exit()
 
     if lmbd is None:
         def lmbd(epoch): return 1.0
@@ -205,10 +204,5 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
             plt.yscale('log')
             plt.savefig(f'loss_history{lhist_suffix}_log.png')
             plt.clf()
-
-        # ## Stop if very accurate (did not work for variational inference losses, so comment out)
-        # if fit_info['best_loss'] < 1.e-10:
-        #     print("AAAA ", fit_info['best_loss'])
-        #     break
 
     return fit_info

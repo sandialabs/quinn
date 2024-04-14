@@ -5,7 +5,6 @@ import math
 import torch
 
 
-
 class RV(torch.nn.Module):
     """Parent class for random variables."""
 

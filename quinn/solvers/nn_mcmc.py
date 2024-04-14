@@ -11,17 +11,16 @@ from ..mcmc.hmc import HMC
 from .quinn import QUiNNBase
 from ..nns.nnwrap import nn_p, NNWrap
 from ..nns.losses import NegLogPost
-from ..nns.tchutils import tch, npy
 
 class NN_MCMC(QUiNNBase):
-    """NN_MCMC wrapper class.
+    """MCMC NN wrapper class.
 
     Attributes:
+        cmode (np.ndarray): MAP values of all parameters, size `M`.
         lpinfo (dict): Dictionary that holds likelihood computation necessary information.
         pdim (int): Dimensonality `d` of chain.
-        verbose (bool): Whether to be verbose or not.
         samples (np.ndarray): MCMC samples of all parameters, size `(M,d)`.
-        cmode (np.ndarray): MAP values of all parameters, size `M`.
+        verbose (bool): Whether to be verbose or not.
     """
 
     def __init__(self, nnmodel, verbose=True):
@@ -47,6 +46,7 @@ class NN_MCMC(QUiNNBase):
 
         Args:
             modelpars (np.ndarray): Log-posterior input parameters.
+            lpinfo (dict): Dictionary of arguments needed for likelihood computation.
 
         Returns:
             float: log-posterior value.
@@ -58,12 +58,11 @@ class NN_MCMC(QUiNNBase):
         # Data
         ydata = lpinfo['yd']
         nd = len(ydata)
+
         if lpinfo['ltype'] == 'classical':
             loss = NegLogPost(self.nnmodel, nd, lpinfo['lparams']['sigma'], None)
 
             lpostm = - model.calc_loss(modelpars, loss, lpinfo['xd'], ydata)
-
-
         else:
             print('Likelihood type is not recognized. Exiting.')
             sys.exit()
@@ -75,9 +74,10 @@ class NN_MCMC(QUiNNBase):
 
         Args:
             modelpars (np.ndarray): Log-posterior input parameters.
+            lpinfo (dict): Dictionary of arguments needed for likelihood computation.
 
         Returns:
-            float: log-posterior value.
+            np.ndarray: log-posterior gradient array.
         """
         model = NNWrap(self.nnmodel)
         model.p_unflatten(modelpars)
@@ -90,8 +90,6 @@ class NN_MCMC(QUiNNBase):
             loss = NegLogPost(self.nnmodel, nd, lpinfo['lparams']['sigma'], None)
             #lpostm = - npy(loss(tch(lpinfo['xd'], rgrad=False), tch(ydata, rgrad=False), requires_grad=False))
             lpostm = - model.calc_lossgrad(modelpars, loss, lpinfo['xd'], ydata)
-
-
         else:
             print('Likelihood type is not recognized. Exiting')
             sys.exit()
@@ -99,7 +97,7 @@ class NN_MCMC(QUiNNBase):
         return lpostm
 
     def fit(self, xtrn, ytrn, zflag=True, datanoise=0.05, nmcmc=6000, param_ini=None, sampler='amcmc', sampler_params=None):
-        r"""Fit function that perfoms MCMC on NN parameters.
+        """Fit function that perfoms MCMC on NN parameters.
 
         Args:
             xtrn (np.ndarray): Input data array `x` of size `(N,d)`.
@@ -108,6 +106,8 @@ class NN_MCMC(QUiNNBase):
             datanoise (float, optional): Datanoise size. Defaults to 0.05.
             nmcmc (int, optional): Number of MCMC steps, `M`.
             param_ini (None, optional): Initial parameter array of size `p`. Default samples randomly.
+            sampler (str, optional): Sampler method ('amcmc', 'hmc', 'mala'). Defaults to 'amcmc'.
+            sampler_params (dict, optional): Sampler parameter dictionary.
         """
         shape_xtrn = xtrn.shape
         ntrn = shape_xtrn[0]
@@ -139,7 +139,7 @@ class NN_MCMC(QUiNNBase):
 
 
     def get_best_model(self, param):
-        """Creates a PyTorch NN module with parameters set to a given flattened parameter array.
+        """Creates a PyTorch NN module with parameters set with a given flattened parameter array.
 
         Args:
             param (np.ndarray): A flattened weight parameter vector.
@@ -177,7 +177,7 @@ class NN_MCMC(QUiNNBase):
         return nn_p(param, x, self.nnmodel)
 
     def predict_ens(self, x, nens=10, nburn=1000):
-        """Summary
+        """Predict an ensemble of results.
 
         Args:
             x (np.ndarray): `(N,d)` input array.

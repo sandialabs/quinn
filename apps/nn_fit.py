@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-
-"""[summary]
-
-[description]
-"""
+"""Command line utility for NN fit."""
 import sys
 import torch
 import argparse
@@ -28,7 +24,7 @@ torch.set_default_dtype(torch.double)
 myrc()
 
 
-usage_str = 'Script to build PC surrogates of multioutput models.'
+usage_str = 'A command line app to build NN surrogate given x-y training dataset.'
 parser = argparse.ArgumentParser(description=usage_str)
 #parser.add_argument('ind_show', type=int, nargs='*',
 #                    help="indices of requested parameters (count from 0)")

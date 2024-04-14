@@ -17,30 +17,29 @@ class RNet(MLPBase):
     """Residual Neural Network (ResNet) class.
 
     Attributes:
-        indim (int): Input dimensionality `d`.
-        outdim (int): Output dimensionality `o`.
-        nlayers (int): Number of layers `L`.
-        step_size (float): Time step size, `1/(L+1)`.
-        rdim (int): Width of the ResNet `r`, i.e. number of units in each hidden layer.
         activ (torch.nn.Module): Activation function.
-        biasorno (bool): Whether or not to include biases in each resnet layer.
-        mlp (bool): If True, residual connections are ignored, and this becomes a regular MLP.
-        layer_pre (bool): Whether there is a pre-resnet linear layer.
-        layer_post (bool): Whether there is a post-resnet linear layer.
-        final_layer (str): If there is a final layer function. The only current option is 'exp' for exponential function.
-        wp_function (LayerFcn): Weight parameterization function.
-        weight_pre (torch.nn.Parameter): Weight matrix of pre-resnet layer, if any.
-        bias_pre (torch.nn.Parameter): Bias vector of pre-resnet layer, if any.
-        weight_post (torch.nn.Parameter): Weight matrix of post-resnet layer, if any.
         bias_post (torch.nn.Parameter): Bias vector of post-resnet layer, if any.
-        paramsw (list[torch.nn.Parameter]): List of Resnet weight matrices.
-        paramsb (list[torch.nn.Parameter]): List of Resnet bias vectors.
-        device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
+        bias_pre (torch.nn.Parameter): Bias vector of pre-resnet layer, if any.
+        biasorno (bool): Whether or not to include biases in each resnet layer.
+        final_layer (str): If there is a final layer function. The only current option is 'exp' for exponential function.
+        indim (int): Input dimensionality `d`.
+        init_factor (float): Multiplicative factor of initialized weights.
+        layer_post (bool): Whether there is a post-resnet linear layer.
+        layer_pre (bool): Whether there is a pre-resnet linear layer.
+        mlp (bool): If True, residual connections are ignored, and this becomes a regular MLP.
+        nlayers (int): Number of layers `L`.
+        outdim (int): Output dimensionality `o`.
+        rdim (int): Width of the ResNet `r`, i.e. number of units in each hidden layer.
+        step_size (float): Time step size, `1/(L+1)`.
+        sum_dim (int): Which dimension the final sum, if any, is with respect to.
+        weight_post (torch.nn.Parameter): Weight matrix of post-resnet layer, if any.
+        weight_pre (torch.nn.Parameter): Weight matrix of pre-resnet layer, if any.
+        wp_function (LayerFcn): Weight parameterization function.
     """
     def __init__(self, rdim, nlayers, wp_function=None, indim=None,
                        outdim=None, biasorno=True, nonlin=True, mlp=False,
                        layer_pre=False, layer_post=False,final_layer=None,
-                       device='cpu', init_factor=1, sum_dim=1):
+                       device='cpu', init_factor=1.0, sum_dim=1):
         """Instantiate ResNet object.
 
         Args:
@@ -55,9 +54,9 @@ class RNet(MLPBase):
             layer_pre (bool, optional): Whether there is a pre-resnet linear layer. Defaults to False.
             layer_post (bool, optional): Whether there is a post-resnet linear layer. Defaults to False.
             final_layer (str, optional): If there is a final layer function. Two options: "exp" for exponential function; "sum" for sum function which will reduce rank of the output tensor. Defaults to no final layer.
-            sum_dim (int, optional): If final layer function is sum, it will select i which dimension to perform sum. Defaults to 1  
             device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
-            init_factor(int): Multiply initial condition tensors by factor.
+            init_factor (float, optional): Multiply initial condition tensors by factor. Defaults to 1.0.
+            sum_dim (int, optional): If final layer function is sum, it will select which dimension to perform sum with respect to. Defaults to 1.
         """
         super().__init__(indim, outdim, device=device)
         if self.indim is None:
@@ -346,7 +345,7 @@ class Poly(LayerFcn):
         return val
 
 class NonPar(LayerFcn):
-    """Non-parameteric weight parameterization, i.e. regular ResNet without weight parameterization.
+    """Non-parameteric weight parameterization, i.e. effectively a regular ResNet without weight parameterization.
 
     Attributes:
         npar (int): Number of parameters.

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""Module for the MLP NN base class."""
 
 import torch
 import functools
@@ -14,15 +15,17 @@ from ..utils.maps import scale01ToDom
 
 torch.set_default_dtype(torch.double)
 
+
 class MLPBase(torch.nn.Module):
     """Base class for an MLP architecture.
 
     Attributes:
         best_model (torch.nn.Module): Best trained instance, if any.
+        device (str): Device this object's model will live in.
+        history (list[np.ndarray]): List containing training history, namely, [fepoch, loss_trn, loss_trn_full, loss_val]
         indim (int): Input dimensionality.
         outdim (int): Output dimensionality.
         trained (bool): Whether the NN is already trained.
-        history (list[np.ndarray]): List containing training history, namely, [fepoch, loss_trn, loss_trn_full, loss_val]
     """
 
     def __init__(self, indim, outdim, device='cpu'):
@@ -31,7 +34,7 @@ class MLPBase(torch.nn.Module):
         Args:
             indim (int): Input dimensionality, `d`.
             outdim (int): Output dimensionality, `o`.
-            device (str): It represents where computations are performed and tensors are allocated. Default to cpu.
+            device (str): Indicates where computations are performed and tensors are allocated. Default to 'cpu'.
         """
         super().__init__()
         self.indim = indim
@@ -49,7 +52,7 @@ class MLPBase(torch.nn.Module):
             x (torch.Tensor): Input of the function.
 
         Raises:
-            NotImplementedError: Need to implement it in children.
+            NotImplementedError: Needs to be implemented in children.
         """
         raise NotImplementedError
 
@@ -58,13 +61,15 @@ class MLPBase(torch.nn.Module):
 
         Args:
             x (np.ndarray): Input array of size `(N,d)`.
-            trained (bool, optional): Whether to evaluate with the best trained parameters or with the current parameters.
 
         Returns:
             np.ndarray: Output array of size `(N,o)`.
 
         Note:
             Both input and outputs are numpy arrays.
+
+        Note:
+            If trained, it uses the best trained model, otherwise it will use the current weights.
         """
         try:
             device = self.best_model.device
@@ -72,9 +77,11 @@ class MLPBase(torch.nn.Module):
             device = 'cpu'
 
         if self.trained:
-            return npy(self.best_model(tch(x, device=device)))
+            y = npy(self.best_model(tch(x, device=device)))
         else:
-            return npy(self.forward(tch(x, device=device)))
+            y = npy(self.forward(tch(x, device=device)))
+
+        return y
 
     def numpar(self):
         """Get the number of parameters of NN.
@@ -131,7 +138,7 @@ class MLPBase(torch.nn.Module):
             iouts (list[int], optional): List of outputs to plot. If None, plot all.
 
         Note:
-            There is a similar function for probabilistic NN in ``quinn.quinn``.
+            There is a similar function for probabilistic NN in :class:`..solvers.quinn.QUiNNBase`.
         """
         nlist = len(xx_list)
         assert(nlist==len(yy_list))
@@ -172,13 +179,12 @@ class MLPBase(torch.nn.Module):
             yy_list (list[np.ndarray]): List of `(N,o)` outputs.
             domain (np.ndarray, optional): Domain of the function, `(d,2)` array. If None, sets it automatically based on data.
             ngr (int, optional): Number of grid points in the 1d plot.
-            true_model (callable, optional): Optionally, plot a function
+            true_model (callable, optional): Optionally, plot the true function.
             labels (list[str], optional): List of labels. If None, set label internally.
             colors (list[str], optional): List of colors. If None, sets colors internally.
-            name_postfix (str, optional): Postfix of the filename of the saved fig.
 
         Note:
-            There is a similar function for probabilistic NN in ``quinn.quinn``.
+            There is a similar function for probabilistic NN in :class:`..solvers.quinn.QUiNNBase`.
         """
 
         nlist = len(xx_list)
@@ -230,14 +236,4 @@ class MLPBase(torch.nn.Module):
                 plt.savefig('fit_d' + str(idim) + '_o' + str(iout) + '.png')
                 plt.clf()
 
-############################################################
-############################################################
-############################################################
 
-class SNet(MLPBase):
-    def __init__(self, nnmodel, indim, outdim, device='cpu'):
-        super().__init__(indim, outdim, device=device)
-        self.nnmodel = nnmodel
-
-    def forward(self, x):
-        return self.nnmodel(x)

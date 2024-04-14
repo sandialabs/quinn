@@ -162,14 +162,14 @@ class SiLU(torch.nn.Module):
         """
         return x * torch.sigmoid(x)
 
-# create a class wrapper from PyTorch nn.Module, so
-# the function now can be easily used in models
+
 class Expon(torch.nn.Module):
     r"""Exponential function :math:`\textrm{Expon}(x) = e^{x}`
     """
     def __init__(self):
         """Initialization. """
         super().__init__()
+
     def forward(self, x):
         """Forward function.
 

@@ -1,27 +1,37 @@
 #!/usr/bin/env python
 """Module for Laplace NN wrapper."""
 
-import numpy as np
 import torch
-from torch.optim import SGD, Adam
-from torch import randperm
+import numpy as np
 
 from .nn_ens import NN_Ens
-from ..ens.learner import Learner
-from ..nns.tchutils import npy, tch
 from ..nns.nnwrap import NNWrap
 from ..nns.losses import NegLogPost
 
 
 class NN_Laplace(NN_Ens):
+    """Wrapper class for the Laplace method.
 
-    def __init__(self, nnmodel, la_type='full', cov_scale=1.0,datanoise=0.1, priorsigma=1.0, **kwargs):
+    Attributes:
+        cov_mats (list): List of covariance matrices.
+        cov_scale (TYPE): Covariance scaling factor for prediction.
+        datanoise (float): Data noise standard deviation.
+        la_type (str): Laplace approximation type ('full' or 'diag').
+        means (list): List of MAP centers.
+        nparams (int): Number of parameters in the model.
+        priorsigma (float): Gaussian prior standard deviation.
+    """
+
+    def __init__(self, nnmodel, la_type='full', cov_scale=1.0, datanoise=0.1, priorsigma=1.0, **kwargs):
         """Initialization.
 
         Args:
             nnmodel (torch.nn.Module): NNWrapper class.
-            datanoise (float): Data noise size
-            **kwargs: Description
+            la_type (str, optional): Laplace approximation type ('full' or 'diag'). Dedaults to 'full'.
+            cov_scale (float, optional): Covariance scaling factor for prediction. Defaults to 1.0.
+            datanoise (float, optional): Data noise standard deviation. Defaults to 0.1.
+            priorsigma (float, optional): Gaussian prior standard deviation. Defaults to 1.0.
+            **kwargs: Any keyword argument that :meth:`..nns.nnfit.nnfit` takes.
         """
         super().__init__(nnmodel, **kwargs)
         self.la_type = la_type
@@ -43,7 +53,7 @@ class NN_Laplace(NN_Ens):
         Args:
             xtrn (np.ndarray): Input array of size `(N,d)`.
             ytrn (np.ndarray): Output array of size `(N,o)`.
-            **kwargs (dict): Keyword arguments.
+            **kwargs (dict): Any keyword argument that :meth:`..nns.nnfit.nnfit` takes.
         """
         for jens in range(self.nens):
             print(f"======== Fitting Learner {jens+1}/{self.nens} =======")
@@ -64,17 +74,16 @@ class NN_Laplace(NN_Ens):
 
 
     def la_calc(self, learner, xtrn, ytrn, batch_size=None):
-        """
-        Given an optimized model, this method stores in the corresponding lists
+        """Given alearner, this method stores in the corresponding lists
         the vectors and matrices defining the posterior according to the
         laplace approximation.
         Args:
-            - learner (Learner class): Instance of the Learner class including the model
-            (torch.nn.Module) being analysed.
-            - xtrn (np.ndarray): input part of the training data.
-            - ytrn (np.ndarray): target part of the training data.
-            - batch_size (int): batch size used in the hessian estimation.
-            Defaults to None.
+            learner (Learner): Instance of the Learner class including the model
+            torch.nn.Module being used.
+            xtrn (np.ndarray): input part of the training data.
+            ytrn (np.ndarray): target part of the training data.
+            batch_size (int): batch size used in the hessian estimation.
+            Defaults to None, i.e. single batch.
         """
         model = NNWrap(learner.nnmodel)
 
@@ -114,6 +123,14 @@ class NN_Laplace(NN_Ens):
 
 
     def predict_sample(self, x):
+        """Predict a single sample.
+
+        Args:
+            x (np.ndarray): Input array `x` of size `(N,d)`.
+
+        Returns:
+            np.ndarray: Output array `x` of size `(N,o)`.
+        """
         jens = np.random.randint(0, self.nens)
         theta = np.random.multivariate_normal(self.means[jens], cov=self.cov_mats[jens])
 
@@ -122,6 +139,17 @@ class NN_Laplace(NN_Ens):
         return model.predict(x, theta)
 
     def predict_ens(self, x, nens=1):
+        """Predict an ensemble of results.
+
+        Args:
+            x (np.ndarray): `(N,d)` input array.
+
+        Returns:
+            list[np.ndarray]: List of `M` arrays of size `(N, o)`, i.e. `M` random samples of `(N,o)` outputs.
+
+        Note:
+            This overloads NN_Ens's and QUiNN's base predict_ens function.
+        """
 
         return self.predict_ens_fromsamples(x, nens=nens)
 

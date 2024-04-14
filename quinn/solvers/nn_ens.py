@@ -3,16 +3,16 @@
 
 import numpy as np
 
-from ..ens.learner import Learner
 from .quinn import QUiNNBase
+from ..ens.learner import Learner
 
 class NN_Ens(QUiNNBase):
     """Deep Ensemble NN Wrapper.
 
     Attributes:
-        nens (int): Number of ensemble members.
-        learners (list[Learner]): List of learners.
         dfrac (float): Fraction of data each learner sees.
+        learners (list[Learner]): List of learners.
+        nens (int): Number of ensemble members.
         verbose (bool): Verbose or not.
     """
 
@@ -54,7 +54,7 @@ class NN_Ens(QUiNNBase):
         Args:
             xtrn (np.ndarray): Input array of size `(N,d)`.
             ytrn (np.ndarray): Output array of size `(N,o)`.
-            **kwargs (dict): Keyword arguments.
+            **kwargs (dict): Any keyword argument that :meth:`..nns.nnfit.nnfit` takes.
         """
         for jens in range(self.nens):
             print(f"======== Fitting Learner {jens+1}/{self.nens} =======")
@@ -89,7 +89,7 @@ class NN_Ens(QUiNNBase):
             x (np.ndarray): `(N,d)` input array.
 
         Returns:
-            np.ndarray: Array of size `(M, N, o)`, i.e. `M` random samples of `(N,o)` outputs.
+            list[np.ndarray]: List of `M` arrays of size `(N, o)`, i.e. `M` random samples of `(N,o)` outputs.
 
         Note:
             This overloads QUiNN's base predict_ens function.
@@ -110,9 +110,17 @@ class NN_Ens(QUiNNBase):
         return y_all
 
     def predict_ens_fromsamples(self, x, nens=1):
+        """Predict ensemble in a loop using individual predict_sample() calls.
 
+        Args:
+            x (np.ndarray): `(N,d)` input array.
+            nens (int, optional): Number of samples requested.
+
+        Returns:
+            list[np.ndarray]: List of `M` arrays of size `(N, o)`, i.e. `M` random samples of `(N,o)` outputs.
+        """
         y_all = []
-        for jens in range(nens):
+        for _ in range(nens):
             y = self.predict_sample(x)
             y_all.append(y)
 

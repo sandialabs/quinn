@@ -4,15 +4,15 @@
 import torch
 import numpy as np
 
+from .nnbase import MLPBase
 from .tchutils import tch, npy
 
-
 class NNWrap():
-    """Wrapper class to any PyTorch NN module.
+    """Wrapper class to any PyTorch NN module to make it work as a numpy function. Basic usage is therefore :math:`f=NNWrap(); y=f(x)`
 
     Attributes:
-        nnmodel (torch.nn.Module): The original PyTorch NN module.
         indices (list): List containing [start index, end index) for each model parameter. Useful for flattening/unflattening of parameter arrays.
+        nnmodel (torch.nn.Module): The original PyTorch NN module.
     """
 
     def __init__(self, nnmodel):
@@ -26,6 +26,7 @@ class NNWrap():
         _ = self.p_flatten()
 
     def reinitialize_instance(self):
+        """Reinitialize the underlying NN module."""
         self.nnmodel.reinitialize_instance()
 
 
@@ -49,11 +50,11 @@ class NNWrap():
         """Model prediction given new weights.
 
         Args:
-            - x (np.ndarray): A numpy input array of size `(N,d)`.
-            - weights (np.ndarray): flattened parameter vector.
+            x_in (np.ndarray): A numpy input array of size `(N,d)`.
+            weights (np.ndarray): flattened parameter vector.
 
         Returns:
-            - np.ndarray: A numpy output array of size `(N,o)`.
+            np.ndarray: A numpy output array of size `(N,o)`.
         """
         x_in = tch(x_in)
         self.p_unflatten(weights)
@@ -61,7 +62,7 @@ class NNWrap():
         return y_out
 
     def p_flatten(self):
-        """Flattens all parameters into an array.
+        """Flattens all parameters of the underlying NN module into an array.
 
         Returns:
             torch.Tensor: A flattened (1d) torch tensor.
@@ -78,7 +79,7 @@ class NNWrap():
         return flat_parameter
 
     def p_unflatten(self, flat_parameter):
-        """Fills the values of corresponding parameters given the flattened form.
+        """Fills the values of corresponding parameters given the flattened numpy form.
 
         Args:
             flat_parameter (np.ndarray): A flattened form of parameters.
@@ -106,53 +107,35 @@ class NNWrap():
 
 
     def calc_loss(self, weights, loss_fn, inputs, targets):
-        """Calculates the loss given a loss function.
+        """Calculates a given loss function with respect to model parameters.
 
         Args:
-            - weights (numpy.ndarray): weights of the model.
-            - loss_fn (torch.nn.Module): pytorch module calculating the loss
-            given the following args:
-                - model (NNWrap class): model from which the parameters are
-                taken.
-                - inputs (numpy.ndarray): data that is input in the model.
-                - target (numpy.ndarray): data corresponding to the output of
-                the model.
-                - requires_grad (bool): whether we will need to compute the
-                gradients with respect to the log posterior
-            - input (numpy.ndarray): input to the model.
-            - target (numpy.ndarray): targets of the output of the model.
+            weights (np.ndarray): weights of the model.
+            loss_fn (torch.nn.Module): pytorch loss module of signature loss(inputs, targets)
+            inputs (np.ndarray): inputs to the model.
+            targets (np.ndarray): target outputs that get compared to model outputs.
 
         Returns:
-            - loss (float): loss of the model given the data.
+            loss (float): loss of the model given the data.
         """
         inputs = tch(inputs, rgrad=False)
         targets = tch(targets, rgrad=False)
-        self.p_unflatten(weights)# TODO: this is not always necessary if loss_fn already incorporates the weights?
+        self.p_unflatten(weights) # TODO: this is not always necessary if loss_fn already incorporates the weights?
 
         loss = loss_fn(inputs, targets)
         return loss.item()
 
     def calc_lossgrad(self, weights, loss_fn, inputs, targets):
-        """Calculates the gradients of the loss given a loss function w.r.t. the
-        model parameters.
+        """Calculates the gradients of a given loss function with respect to model parameters.
 
         Args:
-            - weights (numpy.ndarray): weights of the model.
-            - loss_fn (torch.nn.Module): pytorch module calculating the loss
-            given the following args:
-                - model (NNWrap class): model from which the parameters are
-                taken.
-                - inputs (numpy.ndarray): data that is input in the model.
-                - target (numpy.ndarray): data corresponding to the output of
-                the model.
-                - requires_grad (bool): whether we will need to compute the
-                gradients with respect to the log posterior
-            - input (numpy.ndarray): input to the model.
-            - target (numpy.ndarray): targets of the output of the model.
-        ---------
+            weights (np.ndarray): weights of the model.
+            loss_fn (torch.nn.Module): pytorch loss module of signature loss(inputs, targets)
+            inputs (np.ndarray): inputs to the model.
+            targets (np.ndarray): target outputs that get compared to model outputs.
+
         Returns:
-            - np.ndarray: A numpy array of the loss w.r.t. the gradients of the
-            model parameters.
+            np.ndarray: A numpy array of the loss gradient w.r.t. to the model parameters at inputs.
         """
         inputs = tch(inputs, rgrad=False)
         targets = tch(targets, rgrad=False)
@@ -167,33 +150,26 @@ class NNWrap():
         return np.concatenate(gradients, axis=0)
 
 
-    def calc_hess_full(self, weigths_map, loss_func, inputs, targets):
-        """
-        Calculates the hessian of the loss with respect to the model parameters by
-        first calculating the gradient of the loss and then calculating the gradient
-        of each of the elements of the first gradient.
+    def calc_hess_full(self, weigths, loss_fn, inputs, targets):
+        """Calculates the hessian of a given loss function with respect to model parameters.
 
-        Inputs:
-        - model (NNWrapp_Torch class instance): model over whose parameters we are
-        calculating the posterior.
-        - weights_map (torch.Tensor): weights of the MAP of the log_posterior given
-        by the image.
-        - loss_func: function that calculates the negative of the log posterior
-        given the model, the training data (x and y) and requires_grad to indicate that
-        gradients will be calculated.
-        - x_train (numpy.ndarray or torch.Tensor): input part of the training data.
-        - y_train (numpy.ndarray or torch.Tensor): target part of the training data.
-        --------
-        Outputs:
-        - (torch.Tensor) Hessian of the loss with respect to the model parameters.
+        Args:
+            weights (np.ndarray): weights of the model.
+            loss_fn (torch.nn.Module): pytorch loss module of signature loss(inputs, targets)
+            inputs (np.ndarray): inputs to the model.
+            targets (np.ndarray): target outputs that get compared to model outputs.
 
+        Returns:
+            np.ndarray: Hessian matrix of the loss with respect to the model parameters at inputs.
         """
         inputs = tch(inputs, rgrad=False)
         targets = tch(targets, rgrad=False)
-        self.p_unflatten(weigths_map) # TODO: this is not always necessary if loss_fn already incorporates the weights?
+        self.p_unflatten(weigths) # TODO: this is not always necessary if loss_fn already incorporates the weights?
 
         # Calculate the gradient
-        loss = loss_func(inputs, targets)
+        loss = loss_fn(inputs, targets)
+
+        ## One method...
         # loss.backward()
         # gradients = []
         # for p in self.nnmodel.parameters():
@@ -201,6 +177,7 @@ class NNWrap():
         #     p.grad = None
         # gradients = np.concatenate(gradients, axis=0)
 
+        ## ... or its alternative
         gradients = torch.autograd.grad(
             loss, loss_func.nnmodel.parameters(), create_graph=True, retain_graph=True
         )
@@ -224,28 +201,73 @@ class NNWrap():
         return hessian_mat.detach().numpy()
 
 
-    def calc_hess_diag(self, weigths_map, loss_func, inputs, targets):
+    def calc_hess_diag(self, weigths, loss_fn, inputs, targets):
+        """Calculates the diagonal hessian approximation of a given loss function with respect to model parameters.
 
+        Args:
+            weights (np.ndarray): weights of the model.
+            loss_fn (torch.nn.Module): pytorch loss module of signature loss(inputs, targets)
+            inputs (np.ndarray): inputs to the model.
+            targets (np.ndarray): target outputs that get compared to model outputs.
+
+        Returns:
+            np.ndarray: A diagonal Hessian matrix of the loss with respect to the model parameters at inputs.
+        """
         inputs = tch(inputs, rgrad=False)
         targets = tch(targets, rgrad=False)
-        self.p_unflatten(weigths_map) # TODO: this is not always necessary if loss_fn already incorporates the weights?
+        self.p_unflatten(weigths) # TODO: this is not always necessary if loss_fn already incorporates the weights?
 
         # Calculate the gradient
         gradient_list = []
         for input_, target_ in zip(inputs, targets):
-            loss = loss_func(input_, target_)
+            loss = loss_fn(input_, target_)
 
             gradients = torch.autograd.grad(loss, self.nnmodel.parameters(), create_graph=True, retain_graph=True)
             gradient_list.append(torch.cat([gradient.flatten() for gradient in gradients]).unsqueeze(0))
         diag_fim = torch.cat(gradient_list, dim=0).pow(2).mean(0)
 
         return torch.diag(diag_fim).detach().numpy()
+
+############################################################
+############################################################
+############################################################
+
+class SNet(MLPBase):
+    """A single NN wrapper of a given torch NN module. This is useful as it will inherit all the methods of MLPBase. Written in the spirit of UQ wrapper/solvers.
+
+    Attributes:
+        nnmodel (torch.nn.Module): The underlying torch NN module.
+    """
+
+    def __init__(self, nnmodel, indim, outdim, device='cpu'):
+        """Initialization.
+
+        Args:
+            nnmodel (torch.nn.Module): The underlying torch NN module.
+            indim (int): Input dimensionality.
+            outdim (int): Output dimensionality.
+            device (str, optional): Device where the computations will be done. Defaults to 'cpu'.
+        """
+        super().__init__(indim, outdim, device=device)
+        self.nnmodel = nnmodel
+
+    def forward(self, x):
+        """Forward function.
+
+        Args:
+            x (torch.Tensor): Input tensor.
+
+        Returns:
+            torch.Tensor: Output tensor.
+        """
+        return self.nnmodel(x)
+
 ###############################################################
 ###############################################################
 ###############################################################
 
 def nnwrapper(x, nnmodel):
-    r"""A simple wrapper function to any PyTorch NN module :math:`f(x)=\textrm{NN}(x)`.
+    """A simple numpy-ifying wrapper function to any PyTorch NN module :math:`f(x)=\textrm{NN}(x)`.
 
     Args:
         x (np.ndarray): An input numpy array `x` of size `(N,d)`.
@@ -272,11 +294,15 @@ def nn_surrogate(x, *otherpars):
         np.ndarray: An output numpy array of size `(N,o)`.
 
     Note:
-        This is effectively the same as nnwrapper.
+        This is effectively the same as nnwrapper. It is kept for backward compatibility.
     """
     nnmodule = otherpars[0]
 
     return nnwrapper(x, nnmodule)
+
+###############################################################
+###############################################################
+###############################################################
 
 def nn_surrogate_multi(par, *otherpars):
     r"""A simple wrapper function as a surrogate to a PyTorch NN module :math:`f_i(x)=\textrm{NN}_i(x)` for `i=1,...,o`.
@@ -296,6 +322,10 @@ def nn_surrogate_multi(par, *otherpars):
         yy[:, iout] = nnwrapper(par, nnmodules[iout]).reshape(-1,)
 
     return yy
+
+###############################################################
+###############################################################
+###############################################################
 
 def nn_p(p, x, *otherpars):
     r"""A NN wrapper that evaluates a given PyTorch NN module given input `x` and flattened parameter vector `p`. In other words, :math:`f(p,x)=\textrm{NN}_p(x).`

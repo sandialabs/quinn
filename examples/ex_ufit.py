@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""An example of running all the available UQ-for-NN methods."""
 
 import sys
 import torch
@@ -24,8 +25,7 @@ from quinn.utils.maps import scale01ToDom
 
 
 def main():
-    """Summary
-    """
+    """Main function."""
     torch.set_default_dtype(torch.double)
     myrc()
 

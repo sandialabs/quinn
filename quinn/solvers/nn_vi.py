@@ -12,15 +12,14 @@ from ..nns.tchutils import npy, tch, print_nnparams
 from ..nns.nnfit import nnfit
 
 class NN_VI(QUiNNBase):
-    """VI wrapper class.
+    """VI wrapper class. This implements the Bayes-by-backprop method. For details of the method, see :cite:t:`blundell:2015`.
 
     Attributes:
+        best_model (torch.nn.Module): The best PyTorch NN model found during training.
         bmodel (BNet): The underlying Bayesian model.
+        device (str): Device on which the computations are done.
         trained (bool): Whether the model is trained or not.
         verbose (bool): Whether to be verbose or not.
-        best_epoch (int): The epoch where the best model is reached.
-        best_loss (float): The best loss value.
-        best_model (torch.nn.Module): The best PyTorch NN model found during training.
     """
 
     def __init__(self, nnmodel, verbose=False, pi=0.5, sigma1=1.0, sigma2=1.0,
@@ -34,10 +33,10 @@ class NN_VI(QUiNNBase):
             pi (float): Weight of the first gaussian. The second weight is 1-pi.
             sigma1 (float): Standard deviation of the first gaussian. Can also be a scalar torch.Tensor.
             sigma2 (float): Standard deviation of the second gaussian. Can also be a scalar torch.Tensor.
-            mu_init_lower (float) : Initialization of mu lower value
-            mu_init_upper (float) : Initialization of mu upper value
-            rho_init_lower (float) : Initialization of rho lower value
-            rho_init_upper (float) : Initialization of rho upper value
+            mu_init_lower (float): Initialization of mu lower value
+            mu_init_upper (float): Initialization of mu upper value
+            rho_init_lower (float): Initialization of rho lower value
+            rho_init_upper (float): Initialization of rho upper value
 
         """
         super().__init__(nnmodel)
@@ -52,6 +51,8 @@ class NN_VI(QUiNNBase):
 
         self.bmodel.to(self.device)
         self.verbose = verbose
+        self.trained = False
+        self.best_model = None
 
         if self.verbose:
             print("=========== Deterministic model parameters ================")
@@ -76,13 +77,13 @@ class NN_VI(QUiNNBase):
             lrate (float, optional): Learning rate or learning rate schedule factor. Default is 0.01.
             batch_size (int, optional): Batch size. Default is None, i.e. single batch.
             freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
-            nsam (int, optional): Number of samples for ELBO computation. Defaults to 1.
-            scheduler_lr(str,optional): Learning rate is adjusted during training according to the ReduceLROnPlateau method from pytTorch. 
-            datanoise (float, optional): Datanoise for ELBO computation. Defaults to 0.05.
-            freq_out (int, optional): Frequency, in epochs, of screen output. Defaults to 100.
+            freq_plot (int, optional): Frequency, in epoch, of plotting the loss.
             wd (float, optional): Optional weight decay (L2 regularization) parameter.
-            cooldown (int, optional) : cooldown in ReduceLROnPlateau
-            factor (float, optional) : factor in ReduceLROnPlateau
+            cooldown (int, optional): cooldown in ReduceLROnPlateau
+            factor (float, optional): factor in ReduceLROnPlateau
+            nsam (int, optional): Number of samples for ELBO computation. Defaults to 1.
+            scheduler_lr (None, optional): Scheduler of learning rate. See the corresponding argument in :func:`..nns.nnfit.nnfit()`.
+            datanoise (float, optional): Datanoise for ELBO computation. Defaults to 0.05.
         """
 
         shape_xtrn = xtrn.shape

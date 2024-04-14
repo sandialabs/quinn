@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+"""An example of linear regression via MCMC."""
 
 import sys
 import torch
@@ -14,8 +15,7 @@ from quinn.utils.maps import scale01ToDom
 
 
 def main():
-    """Summary
-    """
+    """Main function."""
     torch.set_default_dtype(torch.double)
     myrc()
 

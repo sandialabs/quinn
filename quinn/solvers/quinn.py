@@ -71,7 +71,7 @@ class QUiNNBase():
 
     def predict_plot(self, xx_list, yy_list, nmc=100,
                     plot_qt=False, labels=None,
-                    colors=None, iouts=None, msize=14, sigma=1,
+                    colors=None, iouts=None, msize=14,
                     figname=None):
         """Plots the diagonal comparison figures.
 
@@ -83,10 +83,11 @@ class QUiNNBase():
             labels (list[str], optional): List of labels. If None, set label internally.
             colors (list[str], optional): List of colors. If None, sets colors internally.
             iouts (list[int], optional): List of outputs to plot. If None, plot all.
+            msize (int, optional): Markersize. Defaults to 14.
             figname (str, optional): Name of the figure to be saved.
 
         Note:
-            There is a similar function for deterministic NN in ``quinn.nns.nnbase``.
+            There is a similar function for deterministic NN in :class:``..nns.nnbase``.
         """
         nlist = len(xx_list)
         assert(nlist==len(yy_list))
@@ -149,7 +150,7 @@ class QUiNNBase():
             name_postfix (str, optional): Postfix of the filename of the saved fig.
 
         Note:
-            There is a similar function for deterministic NN in ``quinn.nns.nnbase``.
+            There is a similar function for deterministic NN in :class:``..nns.nnbase``.
         """
         nlist = len(xx_list)
         assert(nlist==len(yy_list))

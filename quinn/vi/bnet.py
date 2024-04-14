@@ -12,19 +12,20 @@ class BNet(torch.nn.Module):
     """Bayesian NN class.
 
     Attributes:
+        device (str): Device where the computations are done.
+        log_prior (float): Value of log-prior.
+        log_variational_posterior (float): Value of logarithm of variational posterior.
         nnmodel (torch.nn.Module): The underlying PyTorch NN module.
         nparams (int): Number of deterministic parameters.
         param_names (list[str]): List of parameter names.
         param_priors (list[quinn.vi.rvs.RV]): List of parameter priors.
-        rparams (list[quinn.rvar.rvs.RV]): List of variational PDFs.
         params (torch.nn.ParameterList): Variational parameters.
-        log_prior (float): Value of log-prior.
-        log_variational_posterior (float): Value of logarithm of variational posterior.
+        rparams (list[quinn.rvar.rvs.RV]): List of variational PDFs.
     """
 
     def __init__(self, nnmodel, pi=0.5, sigma1=1.0, sigma2=1.0,
                                 mu_init_lower=-0.2, mu_init_upper=0.2,
-                                rho_init_lower=-5.0, rho_init_upper=-4.0  ):
+                                rho_init_lower=-5.0, rho_init_upper=-4.0):
         """Instantiate a Bayesian NN object given an underlying PyTorch NN module.
 
         Args:
@@ -32,10 +33,10 @@ class BNet(torch.nn.Module):
             pi (float): Weight of the first gaussian. The second weight is 1-pi.
             sigma1 (float): Standard deviation of the first gaussian. Can also be a scalar torch.Tensor.
             sigma2 (float): Standard deviation of the second gaussian. Can also be a scalar torch.Tensor.
-            mu_init_lower (float) : Initialization of mu lower value
-            mu_init_upper (float) : Initialization of mu upper value
-            rho_init_lower (float) : Initialization of rho lower value
-            rho_init_upper (float) : Initialization of rho upper value
+            mu_init_lower (float): Initialization of mu lower value
+            mu_init_upper (float): Initialization of mu upper value
+            rho_init_lower (float): Initialization of rho lower value
+            rho_init_upper (float): Initialization of rho upper value
         """
         super().__init__()
         assert(isinstance(nnmodel, torch.nn.Module))
