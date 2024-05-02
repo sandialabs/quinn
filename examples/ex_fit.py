@@ -1,21 +1,13 @@
 #!/usr/bin/env python
 """An example of a 1d function approximation."""
 
-import os
-import sys
-import copy
-import numpy as np
-import matplotlib.pyplot as plt
-
 import torch
-
+import numpy as np
 
 from quinn.nns.mlp import MLP
-from quinn.func.funcs import Ackley, Sine, Sine10, blundell
-from quinn.nns.nns import MLP_simple, Polynomial3
-from quinn.nns.tchutils import tch
 from quinn.utils.plotting import myrc
 from quinn.utils.maps import scale01ToDom
+from quinn.func.funcs import Sine, Sine10, blundell
 
 
 
@@ -23,12 +15,8 @@ def main():
 
     torch.set_default_dtype(torch.double)
     myrc()
-    # defaults to cuda:0
+    # defaults to cuda:0 if available
     device_id='cuda:0'
-    # use: ./ex_ufit uq_method device_id, where uq_method: 'mcmc' 'vi' 'ens', and 
-    # device_id: cuda:0, cuda:1,... depending on number of gpus
-    if len(sys.argv) > 1:
-        device_id=sys.argv[1]
     device = torch.device(device_id if torch.cuda.is_available() else 'cpu')
     print("Using device",device)
 
@@ -37,8 +25,8 @@ def main():
     #################################################################################
 
 
-    nall = 112 # total number of points
-    trn_factor = 0.9 # which fraction of nall goes to training
+    nall = 22 # total number of points
+    trn_factor = 0.8 # which fraction of nall goes to training
     ntst = 13 # separate test set
     ndim = 1 # input dimensionality
     datanoise = 0.00 # Noise in the generated data
@@ -67,7 +55,9 @@ def main():
 
     # Model to fit
     nnet = MLP(ndim, nout, (11,11,11), biasorno=True,
-               activ='tanh', bnorm=False, bnlearn=True, dropout=0.0,
+               activ='tanh',
+               bnorm=False, bnlearn=True,
+               dropout=0.0,
                device=device)
 
     # Data split to training and validation
@@ -78,7 +68,9 @@ def main():
     xtrn, xval = xall[indtrn, :], xall[indval, :]
     ytrn, yval = yall[indtrn, :], yall[indval, :]
     
-    nnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=None, nepochs=2000, loss=None)
+    nnet.fit(xtrn, ytrn, val=[xval, yval],
+             lrate=0.01,
+             batch_size=None, nepochs=2000)
 
     print("=======================================")
     # print("Best Parameters : ")

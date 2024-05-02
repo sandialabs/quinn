@@ -1309,7 +1309,7 @@ def plot_2d_anchored_single(models, modelpars,
                             squished=True, pad=0.5, scale=1., ngr=111,
                             modellabels=None, colorful=False, clearax=False,
                             legend_show=True, modelcolors=None, ax=None, figname=None):
-    """Plots 1d slices of a list of models going through one or two anchor points.
+    """Plots 2d slices of a list of models going through one or two anchor points.
 
     Args:
         models (list[callable]): List of model evaluators.

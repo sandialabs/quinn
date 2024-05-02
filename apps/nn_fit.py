@@ -4,21 +4,22 @@ import sys
 import torch
 import argparse
 import numpy as np
-import matplotlib.pyplot as plt
 
 
-from quinn.solvers.nn_mcmc import NN_MCMC
 from quinn.solvers.nn_vi import NN_VI
 from quinn.solvers.nn_ens import NN_Ens
 from quinn.solvers.nn_rms import NN_RMS
+from quinn.solvers.nn_mcmc import NN_MCMC
+from quinn.solvers.nn_swag import NN_SWAG
+from quinn.solvers.nn_laplace import NN_Laplace
 
+from quinn.utils.plotting import myrc
 from quinn.utils.stats import get_domain
 from quinn.utils.maps import scale01ToDom
 from quinn.utils.xutils import read_textlist
-from quinn.utils.plotting import myrc, lighten_color, plot_dm, plot_sens
 
-from quinn.nns.mlp import MLP
-from quinn.nns.rnet import RNet, Const, Lin, Quad, Cubic, NonPar, Poly
+from quinn.nns.rnet import RNet, Poly
+
 torch.set_default_dtype(torch.double)
 
 myrc()
@@ -46,6 +47,9 @@ parser.add_argument("-v", "--valfactor", dest="valfactor", type=float, default=0
 args = parser.parse_args()
 
 method = args.method
+all_uq_options = ['amcmc', 'hmc', 'vi', 'ens', 'rms', 'laplace', 'swag']
+assert method in all_uq_options, f'Pick among {all_uq_options}'
+
 trnfactor = args.trnfactor
 valfactor = args.valfactor
 assert(trnfactor+valfactor<=1.0)
@@ -121,8 +125,8 @@ if method == 'amcmc':
 elif method == 'hmc':
     nmc = 100
     uqnet = NN_MCMC(nnet, verbose=True)
-    sampler_params = {'L': 3, 'epsilon': 0.01}
-    uqnet.fit(xtrn, ytrn, zflag=False, datanoise=0.1, nmcmc=10000, sampler='hmc', sampler_params=sampler_params)
+    sampler_params = {'L': 3, 'epsilon': 0.0001}
+    uqnet.fit(xtrn, ytrn, zflag=False, datanoise=0.01, nmcmc=10000, sampler='hmc', sampler_params=sampler_params)
 elif method == 'vi':
     nmc = 111
     uqnet = NN_VI(nnet, verbose=True)
@@ -135,10 +139,14 @@ elif method == 'rms':
     nmc = 7
     uqnet = NN_RMS(nnet, nens=nmc, dfrac=0.8, verbose=True, datanoise=0.1, priorsigma=0.1)
     uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
-elif meth == 'laplace':
+elif method == 'laplace':
     nmc = 3
     uqnet = NN_Laplace(nnet, nens=nmc, dfrac=1.0, verbose=True, la_type='full')
     uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
+elif method == 'swag':
+        nmc = 3
+        uqnet = NN_SWAG(nnet, nens=nmc, dfrac=1.0, verbose=True, k=10, n_steps=12, c=1, cov_type="lowrank", lr_swag=0.01)
+        uqnet.fit(xtrn, ytrn, val=[xval, yval], lrate=0.01, batch_size=2, nepochs=1000)
 else:
     print(f"UQ Method {method} is unknown. Exiting.")
     sys.exit()

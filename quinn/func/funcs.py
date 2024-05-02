@@ -81,3 +81,15 @@ def Ackley(x, datanoise=0.02):
     for i in range(ndim-1):
         yy += np.exp(-0.2)*np.sqrt(x[:,i]**2 + x[:,i+1]**2) + 3 *(np.cos(2*x[:,i])+np.sin(2*x[:,i+1]))
     return yy.reshape(-1, 1)
+
+def x5(xx, datanoise=0.0):
+    r"""Fifth power function.
+
+    Args:
+        xx (np.ndarray): Input array :math:`x` of size `(N,d)`.
+        datanoise (float, optional): Standard deviation :math:`\sigma` of i.i.d. gaussian noise.
+    """
+    yy = datanoise * np.random.randn(xx.shape[0], 1)
+    yy += xx[:,0].reshape(-1,1)**5
+
+    return yy

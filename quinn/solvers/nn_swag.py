@@ -103,7 +103,7 @@ class NN_SWAG(NN_Ens):
 
         d_mat = []
         for i in range(1, self.n_steps + 1):
-            learner.fit(xtrn, ytrn, nepochs=1, optimizer='sgd', lrate=self.lr_swag)
+            learner.fit(xtrn, ytrn, nepochs=1, optimizer='sgd', lrate=self.lr_swag) # TODO: does this need the main loss function, or the default is ok?
 
             if i % self.c == 0:
                 n = i // self.c

@@ -10,7 +10,7 @@ class PeriodicLoss(torch.nn.Module):
     r"""Example of a periodic loss regularization.
 
     Attributes:
-        model (callable): Model evaluator.
+        model (callable): NN model evaluator.
         lam (float): Penalty strength.
         bdry1 (torch.Tensor): First boundary.
         bdry2 (torch.Tensor): Second boundary.
@@ -21,29 +21,35 @@ class PeriodicLoss(torch.nn.Module):
         \frac{1}{N}||y_{\text{pred}}-y_{\text{target}}||^2 + \frac{\lambda}{N}||M\text{(boundary1)}-M\text{(boundary2)}||^2.
     """
 
-    def __init__(self, loss_params):
+    def __init__(self, nnmodel, lam, boundary):
         """Initialization.
 
         Args:
-            loss_params (tuple): A 4-tuple of (model, lam, boundary1, boundary2).
+            nnmodel (torch.nn.Module): NN model.
+            lam (float, optional): Penalty strength. Defaults to 0.
+            boundary (tuple): A tuple of form (boundary1, boundary2).
         """
         super().__init__()
-        self.model, self.lam, self.bdry1, self.bdry2 = loss_params
+        self.nnmodel = nnmodel
+        self.lam = lam
+        self.bdry1, self.bdry2 = boundary
 
-    def forward(self, predictions, targets):
+    def forward(self, inputs, targets):
         """Forward function.
 
         Args:
-            predictions (torch.Tensor): Predictions tensor.
+            inputs (torch.Tensor): Input tensor.
             targets (torch.Tensor): Targets tensor.
 
         Returns:
             float: Loss value.
         """
 
+        predictions = self.nnmodel(inputs)
+
         fit = torch.mean((predictions-targets)**2)
 
-        penalty = self.lam * torch.mean((self.model(self.bdry1)-self.model(self.bdry2))**2)
+        penalty = self.lam * torch.mean((self.nnmodel(self.bdry1)-self.nnmodel(self.bdry2))**2)
         loss =  fit + penalty
 
         return loss
@@ -58,7 +64,7 @@ class GradLoss(torch.nn.Module):
 
     Attributes:
         lam (float): Penalty strength.
-        nnmodel (callable): NN module.
+        nnmodel (callable): NN model evaluator.
 
     The loss function has a form
 

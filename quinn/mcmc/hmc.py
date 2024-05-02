@@ -61,7 +61,8 @@ class HMC(MCMCBase):
 
 
         # Negate momentum to make proposal symmetric
-        p = -p # TODO: is this really necessary?
+        # This is really not necessary, but we kept it per original paper
+        p = -p
 
         # Evaluate kinetic and potential energies
         proposed_K = np.sum(np.square(p)) / 2

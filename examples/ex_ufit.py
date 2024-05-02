@@ -5,23 +5,18 @@ import sys
 import torch
 import numpy as np
 
-from quinn.solvers.nn_mcmc import NN_MCMC
 from quinn.solvers.nn_vi import NN_VI
 from quinn.solvers.nn_ens import NN_Ens
 from quinn.solvers.nn_rms import NN_RMS
-from quinn.solvers.nn_laplace import NN_Laplace
+from quinn.solvers.nn_mcmc import NN_MCMC
 from quinn.solvers.nn_swag import NN_SWAG
+from quinn.solvers.nn_laplace import NN_Laplace
 
-from quinn.func.funcs import Ackley, Sine, Sine10, blundell
 
-from quinn.nns.mlp import MLP
-from quinn.nns.losses import CustomLoss
-from quinn.nns.nns import MLP_simple, Constant, Polynomial,Polynomial3, TwoLayerNet
-from quinn.nns.rnet import RNet, Const, Lin, Quad, Cubic, NonPar, Poly
-from quinn.nns.tchutils import print_nnparams
-
+from quinn.nns.rnet import RNet, Poly
 from quinn.utils.plotting import myrc
 from quinn.utils.maps import scale01ToDom
+from quinn.func.funcs import Sine, Sine10, blundell
 
 
 def main():
@@ -31,14 +26,12 @@ def main():
 
     #################################################################################
     #################################################################################
-    meth = sys.argv[1] #'mcmc' #'vi' #'ens'
+    meth = sys.argv[1]
+    all_uq_options = ['amcmc', 'hmc', 'vi', 'ens', 'rms', 'laplace', 'swag']
+    assert meth in all_uq_options, f'Pick among {all_uq_options}'
 
-    # defaults to cuda:0
+    # defaults to cuda:0 if available
     device_id='cuda:0'
-    # use: ./ex_ufit uq_method device_id, where uq_method: 'mcmc' 'vi' 'ens', and 
-    # device_id: cuda:0, cuda:1,... depending on number of gpus
-    if len(sys.argv) > 2:
-        device_id=sys.argv[2]
     device = torch.device(device_id if torch.cuda.is_available() else 'cpu')
     print("Using device",device)
 
@@ -97,6 +90,8 @@ def main():
     indval = indperm[ntrn:]
     xtrn, xval = xall[indtrn, :], xall[indval, :]
     ytrn, yval = yall[indtrn, :], yall[indval, :]
+
+
 
 
     if meth == 'amcmc':

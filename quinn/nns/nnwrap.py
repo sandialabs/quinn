@@ -179,7 +179,7 @@ class NNWrap():
 
         ## ... or its alternative
         gradients = torch.autograd.grad(
-            loss, loss_func.nnmodel.parameters(), create_graph=True, retain_graph=True
+            loss, self.nnmodel.parameters(), create_graph=True, retain_graph=True
         )
         gradients = [gradient.flatten() for gradient in gradients]
 

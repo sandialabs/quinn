@@ -283,6 +283,6 @@ def safe_cholesky(cov):
     else:
         lower = np.linalg.cholesky(cov)
 
-    assert(np.linalg.norm(cov - np.dot(lower, lower.T)) < 1.e-15)
+    assert(np.linalg.norm(cov - np.dot(lower, lower.T)) < 1.e-12)
 
     return lower

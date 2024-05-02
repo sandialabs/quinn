@@ -40,6 +40,7 @@ class NN_MCMC(QUiNNBase):
 
         self.samples = None
         self.cmode = None
+        self.lpinfo = {}
 
     def logpost(self, modelpars, lpinfo):
         """Function that computes log-posterior given model parameters.
@@ -122,7 +123,7 @@ class NN_MCMC(QUiNNBase):
         if param_ini is None:
             param_ini = np.random.rand(self.pdim)  # initial parameter values
             if zflag:
-                res = minimize((lambda x, fcn: -fcn(x)), param_ini, args=(self.logpost,), method='BFGS',options={'gtol': 1e-13})
+                res = minimize((lambda x, fcn, lpinfo: -fcn(x, lpinfo)), param_ini, args=(self.logpost,self.lpinfo), method='BFGS',options={'gtol': 1e-13})
                 param_ini = res.x
 
 
