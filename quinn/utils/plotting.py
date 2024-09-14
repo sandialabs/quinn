@@ -240,7 +240,7 @@ def parallel_coordinates(parnames, values, labels, savefig='pcoord'):
 
     # Plot
     class_id = np.searchsorted(ulabels, labels)
-    lines = plt.plot(values[:,:], 'go-',ms=6,linewidth=0.5)
+    lines = plt.plot(values[:,:], 'go-',ms=6,linewidth=0.1)
 
     if n_labels>1:
         # Set colors
@@ -437,7 +437,7 @@ def plot_sens(sensdata, pars, cases,
             curr=sensdata[cases,i]+curr
 
         if not xflag:
-            plt.xticks(np.array(range(1,ncases_+1)),case_labels_,rotation=xticklabel_rotation)
+            plt.xticks(np.array(range(1,ncases_+1)),case_labels_,rotation=xticklabel_rotation, fontsize=xticklabel_size)
 
         plt.xlim(xdatatick[0]-wd*sc/2.-0.1,xdatatick[-1]+wd*sc/2.+0.1)
 
@@ -458,8 +458,9 @@ def plot_sens(sensdata, pars, cases,
         plt.legend(handles,labels,loc='upper left', bbox_to_anchor=(0.0, 1.2),fancybox=True, shadow=True,ncol=ncol,labelspacing=-0.1,fontsize=legend_size)
 
 
-    if not xflag:
-        zed = [tick.label.set_fontsize(xticklabel_size) for tick in plt.gca().xaxis.get_major_ticks()]
+    # if not xflag:
+    #     print(dir(plt.gca().xaxis.get_major_ticks()[0]))
+    #     zed = [tick.label.set_fontsize(xticklabel_size) for tick in plt.gca().xaxis.get_major_ticks()]
 
     plt.grid(grid_show)
     plt.savefig(figname)
@@ -845,6 +846,7 @@ def plot_pdfs(ind_show=None, plot_type='tri', pdf_type='hist',
                                    figsize=(6*ncol,(5+ypad)*nrow),
                                    gridspec_kw={'hspace': ypad, 'wspace': xpad})
         if nrow==1: axarr=[axarr]
+        if ncol==1: axarr=[axarr]
         for i in range(npar, ncol*nrow):
             k = i % ncol
             j = (i-k)//ncol
@@ -1351,6 +1353,7 @@ def plot_2d_anchored_single(models, modelpars,
             # ticklabelsx = [f"A$_x-\Delta_x$", f'A$_x$', f'A$_x+\Delta_x$']
             # ticklabelsy = [f"A$_y-\Delta_y$", f'A$_y$', f'A$_y+\Delta_y$']
     else:
+        print(anchor1.shape, anchor2.shape, anchor3.shape)
         origin, e1, e2 = pick_basis(anchor1, anchor2, anchor3)
 
 
