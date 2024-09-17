@@ -835,10 +835,11 @@ def plot_pdfs(ind_show=None, plot_type='tri', pdf_type='hist',
             prange = prange_.copy()
 
     if plot_type == 'tri':
-        figs, axarr = plt.subplots(npar, npar, sharex='col',
+        figs, axarr = plt.subplots(npar, npar,
                                    figsize=(6*npar,(5+ypad)*npar),
                                    gridspec_kw={'hspace': ypad, 'wspace': xpad})
         if npar==1: axarr=[[axarr]]
+
     elif plot_type == 'inds':
         ncol = min(npar, 4)
         nrow = (npar-1)//ncol+1
@@ -1245,7 +1246,9 @@ def plot_1d_anchored_single(models, modelpars,
         # xmin, xmax = ax.get_xaxis().get_view_interval()
         # ymin, ymax = ax.get_yaxis().get_view_interval()
         # ax.add_artist(plt.Line2D((xmin, xmax), (ymin, ymin), color='black', linewidth=2))
+        ax.xaxis.set_ticks([0])
         ax.xaxis.set_ticklabels([''])
+        ax.yaxis.set_ticks([0])
         ax.yaxis.set_ticklabels([''])
     else:
         ax.xaxis.set_ticks([-1, 0, 1])
