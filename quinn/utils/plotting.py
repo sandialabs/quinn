@@ -380,7 +380,7 @@ def plot_sens(sensdata, pars, cases,
 
     # Set up the figure
     if xticklabel_size is None:
-        xticklabel_size=int(400/ncases)
+        xticklabel_size=min(400//ncases, 20)
     fig = plt.figure(figsize=(20,12))
     fig.add_axes([0.1,0.2+yoffset,0.8,0.6-yoffset])
 
@@ -464,6 +464,7 @@ def plot_sens(sensdata, pars, cases,
 
     plt.grid(grid_show)
     plt.savefig(figname)
+    plt.clf()
 
 
 #############################################################
@@ -599,6 +600,7 @@ def plot_jsens(msens,jsens,varname='', inpar_names=None,figname='senscirc.png'):
     ax.set_yticks([])
 
     plt.savefig(figname)
+    plt.clf()
 
 #############################################################
 
