@@ -69,6 +69,39 @@ class QUiNNBase():
 
         return y
 
+    def predict_mom_sample(self, x, msc=0, nsam=1000):
+        r"""Predict function, given input :math:`x`.
+
+        Args:
+            x (np.ndarray): A 2d array of inputs of size :math:`(N,d)` at which bases are evaluated.
+            msc (int, optional): Prediction mode: 0 (mean-only), 1 (mean and variance), or 2 (mean, variance and covariance). Defaults to 0.
+
+        Returns:
+            tuple(np.ndarray, np.ndarray, np.ndarray): triple of Mean (array of size `(N, o)`), Variance (array of size `(N, o)` or None), Covariance (array of size `(N, N, o)` or None).
+        """
+        y = self.predict_ens(x, nens=nsam)
+        nsam_, nx, nout = y.shape
+        ymean = np.mean(y, axis=0)
+        ycov = np.empty((nx, nx, nout))
+        yvar = np.empty((nx, nout))
+        if msc==2:
+            for iout in range(nout):
+                ycov[:,:,iout] = np.cov(y[:,:,iout], rowvar=False, ddof=1)
+                yvar[:, iout] = np.diag(ycov[:,:,iout])
+        elif msc==1:
+            ycov = None
+            for iout in range(nout):
+                ycov[:,:,iout] = np.cov(y[:,:,iout], rowvar=False, ddof=1)
+            yvar = np.var(y, axis=0, ddof=1)
+        elif msc==0:
+            ycov = None
+            yvar = None
+        else:
+            print(f"msc={msc}, but needs to be 0,1, or 2. Exiting.")
+            sys.exit()
+
+        return ymean, yvar, ycov
+
     def predict_plot(self, xx_list, yy_list, nmc=100,
                     plot_qt=False, labels=None,
                     colors=None, iouts=None, msize=14,

@@ -4,6 +4,7 @@
 import sys
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 
 from quinn.solvers.nn_vi import NN_VI
 from quinn.solvers.nn_ens import NN_Ens
@@ -14,7 +15,7 @@ from quinn.solvers.nn_laplace import NN_Laplace
 
 
 from quinn.nns.rnet import RNet, Poly
-from quinn.utils.plotting import myrc
+from quinn.utils.plotting import myrc, plot_vars
 from quinn.utils.maps import scale01ToDom
 from quinn.func.funcs import Sine, Sine10, blundell
 
@@ -142,6 +143,30 @@ def main():
     if plot_1d:
         uqnet.plot_1d_fits(xx_list, yy_list, nmc=100, labels=ll_list, true_model=true_model, name_postfix=str(meth))
     uqnet.predict_plot(xx_list, yy_list, nmc=100, plot_qt=False, labels=ll_list)
+
+    # Another way of plotting, by explicitly using predict function
+    if plot_1d:
+        assert(ndim==1)
+        xgrid = scale01ToDom(np.linspace(0.0, 1.0, 111), domain)
+
+        ygrid_mean, ygrid_var, ygrid_cov = uqnet.predict_mom_sample(xgrid[:, np.newaxis], msc=2, nsam=1000)
+        nout = ygrid_mean.shape[-1]
+        for iout in range(nout):
+            plt.figure(figsize=(12, 9))
+            plot_vars(xgrid, ygrid_mean[:, iout],
+                      variances=ygrid_var[:, iout][:, np.newaxis],
+                      varcolors=['gray'], varlabels=['Std. deviation'],
+                      grid_show=True, connected=True,
+                      interp=None, ax=plt.gca())
+            plt.plot(xtrn, ytrn, 'bo', zorder=10000, label='Training points')
+            plt.plot(xval, yval, 'go', zorder=10000, label='Validation points')
+            if ntst>0:
+                plt.plot(xtst, ytst, 'ro', zorder=10000, label='Testing points')
+            plt.xlabel('Input')
+            plt.ylabel(f'Output #{iout+1}')
+            plt.legend()
+            plt.savefig(f'fit_var_o{iout}_{meth}.png')
+            plt.clf()
 
 if __name__ == '__main__':
     main()

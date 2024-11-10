@@ -107,7 +107,7 @@ class NN_Ens(QUiNNBase):
             y = self.learners[permuted_inds[jens]].predict(x)
             y_all.append(y)
 
-        return y_all
+        return np.array(y_all)
 
     def predict_ens_fromsamples(self, x, nens=1):
         """Predict ensemble in a loop using individual predict_sample() calls.
@@ -124,4 +124,4 @@ class NN_Ens(QUiNNBase):
             y = self.predict_sample(x)
             y_all.append(y)
 
-        return y_all
+        return np.array(y_all)
