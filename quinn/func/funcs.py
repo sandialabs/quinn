@@ -3,6 +3,8 @@
 
 import numpy as np
 
+
+
 def blundell(xx, datanoise=0.0):
     r"""Classical example from :cite:t:`blundell:2015`.
 
@@ -19,8 +21,10 @@ def blundell(xx, datanoise=0.0):
         This function is typically used in `d=1` setting.
     """
     noise = datanoise * np.random.randn(xx.shape[0], xx.shape[1])
-    yy = xx + 0.3 * np.sin(2.*np.pi*(xx+noise))+0.3 * np.sin(4.*np.pi*(xx+noise))+noise
+    yy = xx + 0.3 * np.sin(2. * np.pi * (xx + noise)) + 0.3 * \
+        np.sin(4. * np.pi * (xx + noise)) + noise
     return yy
+
 
 def Sine(xx, datanoise=0.0):
     r"""Simple sum of sines function
@@ -37,6 +41,26 @@ def Sine(xx, datanoise=0.0):
     """
     yy = datanoise * np.random.randn(xx.shape[0], 1)
     yy += np.sum(np.sin(xx), axis=1).reshape(-1, 1)
+
+    return yy
+
+
+def Summation(xx, datanoise=0.0):
+    r"""Summation function.
+
+    .. math::
+        f(x)=x_1 + x_2 + \dots + x_d + \sigma \: {\cal N} (0,1)
+
+    Args:
+        xx (np.ndarray): Input array :math:`x` of size `(N,d)`.
+        datanoise (float, optional): Standard deviation :math:`\sigma` of i.i.d. gaussian noise, both on the input and output.
+
+    Returns:
+        np.ndarray: Output array of size `(N,d)`.
+    """
+
+    yy = datanoise * np.random.randn(xx.shape[0], 1)
+    yy += np.sum(xx, axis=1).reshape(-1, 1)
 
     return yy
 
@@ -62,6 +86,7 @@ def Sine10(xx, datanoise=0.02):
 
     return yy
 
+
 def Ackley(x, datanoise=0.02):
     r"""Ackley4 or Modified Ackley function from https://arxiv.org/pdf/1308.4008v1.pdf.
 
@@ -78,9 +103,11 @@ def Ackley(x, datanoise=0.02):
     yy = datanoise * np.random.randn(x.shape[0],)
     ndim = x.shape[1]
 
-    for i in range(ndim-1):
-        yy += np.exp(-0.2)*np.sqrt(x[:,i]**2 + x[:,i+1]**2) + 3 *(np.cos(2*x[:,i])+np.sin(2*x[:,i+1]))
+    for i in range(ndim - 1):
+        yy += np.exp(-0.2) * np.sqrt(x[:, i]**2 + x[:, i + 1]**2) + \
+            3 * (np.cos(2 * x[:, i]) + np.sin(2 * x[:, i + 1]))
     return yy.reshape(-1, 1)
+
 
 def x5(xx, datanoise=0.0):
     r"""Fifth power function.
@@ -90,6 +117,6 @@ def x5(xx, datanoise=0.0):
         datanoise (float, optional): Standard deviation :math:`\sigma` of i.i.d. gaussian noise.
     """
     yy = datanoise * np.random.randn(xx.shape[0], 1)
-    yy += xx[:,0].reshape(-1,1)**5
+    yy += xx[:, 0].reshape(-1, 1)**5
 
     return yy
