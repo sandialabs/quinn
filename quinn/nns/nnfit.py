@@ -84,7 +84,7 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
     scheduler = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda=lmbd)
 
     if scheduler_lr == "ReduceLROnPlateau":
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', cooldown=cooldown, factor=factor, verbose=False)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='min', cooldown=cooldown, factor=factor)
 
 
 
@@ -135,15 +135,17 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
                     loss_trn_full = loss_xy(xtrn_, ytrn_)
 
             fepoch += 1. / nsubepochs
-
+            #print(len(fit_info['history']), loss_trn, loss_trn_full, loss_val)
             curr_state = [fepoch + 0.0, loss_trn.item(), loss_trn_full.item(), loss_val.item()]
             crit = loss_val.item()
 
             fit_info['history'].append(curr_state)
 
             if crit < fit_info['best_loss']:
+                # print("Found best", crit ,fit_info['best_loss'])
                 fit_info['best_loss'] = crit
-                fit_info['best_nnmodel'] = copy.copy(nnmodel)
+                fit_info['best_nnmodel'] = copy.deepcopy(nnmodel)
+                # fit_info['best_nnmodel'].printParams()
 
                 fit_info['best_fepoch'] = fepoch
                 fit_info['best_epoch'] = t
@@ -157,6 +159,9 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
             loss_trn.backward()
 
             opt.step()
+
+
+
         if scheduler_lr == "ReduceLROnPlateau":
             ## using ValLoss as metric
             scheduler.step(curr_state[3])

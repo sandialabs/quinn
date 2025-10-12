@@ -7,7 +7,7 @@ import torch
 
 torch.set_default_dtype(torch.double)
 
-def tch(arr, device='cpu', rgrad=True):
+def tch(arr, device='cpu', rgrad=False):
     """Convert a numpy array to torch Tensor.
 
     Args:

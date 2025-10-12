@@ -302,7 +302,7 @@ def plot_yx(x, y, rowcols=None, ylabel='', xlabels=None,
     else:
         rows, cols = rowcols
 
-    fig, axes = plt.subplots(rows, cols, figsize=(8*cols,(3+ypad)*rows),
+    fig, axes = plt.subplots(rows, cols, figsize=(8*cols,(2+ypad)*rows),
                              gridspec_kw={'hspace': ypad, 'wspace': xpad})
 
     if rows * cols > 1:
@@ -329,6 +329,7 @@ def plot_yx(x, y, rowcols=None, ylabel='', xlabels=None,
         ih = i % cols
         iv = i // cols
         axes[ih, iv].remove()
+
 
     plt.savefig(filename)
 
@@ -604,7 +605,8 @@ def plot_jsens(msens,jsens,varname='', inpar_names=None,figname='senscirc.png'):
 
 #############################################################
 
-def plot_tri(xi, names=None, msize=3, figname='xsam_tri.png'):
+
+def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=None):
     """Plots multidimensional samples in a triangular way, i.e. 1d and 2d cuts.
 
     Args:
@@ -614,8 +616,13 @@ def plot_tri(xi, names=None, msize=3, figname='xsam_tri.png'):
         figname (str, optional): Figure file name.
     """
     nsam, npar = xi.shape
-    figs, axarr = plt.subplots(npar, npar, figsize=(15, 15))
-    if npar==1: axarr=[[axarr]]
+
+    if zorder is None:
+        zorder = 0
+    if axarr is None:
+        _, axarr = plt.subplots(npar, npar, figsize=(2*npar, 2*npar))
+        if npar==1: axarr=[[axarr]]
+
 
     if names is None:
         names = ['p'+str(j) for j in range(npar)]
@@ -623,7 +630,7 @@ def plot_tri(xi, names=None, msize=3, figname='xsam_tri.png'):
 
     for i in range(npar):
         thisax = axarr[i][i]
-        thisax.plot(np.arange(nsam), xi[:, i])
+        thisax.plot(np.arange(nsam), xi[:, i], 'o', color=clr, markersize=msize, zorder=zorder)
 
         if i == 0:
             thisax.set_ylabel(names[i])
@@ -638,7 +645,7 @@ def plot_tri(xi, names=None, msize=3, figname='xsam_tri.png'):
             thisax = axarr[i][j]
             axarr[j][i].axis('off')
 
-            thisax.plot(xi[:, j], xi[:, i], 'o', markersize=msize)
+            thisax.plot(xi[:, j], xi[:, i], 'o', color=clr, markersize=msize, zorder=zorder)
 
 
             # x0, x1 = thisax.get_xlim()
@@ -652,7 +659,9 @@ def plot_tri(xi, names=None, msize=3, figname='xsam_tri.png'):
             if j > 0:
                 thisax.yaxis.set_ticklabels([])
 
-    plt.savefig(figname)
+    plt.tight_layout()
+    if figname is not None:
+        plt.savefig(figname)
 
 #############################################################
 
@@ -1216,7 +1225,7 @@ def plot_1d_anchored_single(models, modelpars,
     if anchor2 is None:
         anchor2 = sample_sphere(center=anchor1, rad=scale, nsam=1).reshape(-1,)
         origin, e1 = anchor1, anchor2-anchor1
-        ticklabels = [f"A$-\Delta$", f'A', f'A$+\Delta$']
+        ticklabels = [r"A$-\Delta$", f'A', r'A$+\Delta$']
     else:
         origin, e1 = (anchor1+anchor2)/2., (anchor2-anchor1)/2.
         ticklabels = [r'A$_1$', '', r'A$_2$']
