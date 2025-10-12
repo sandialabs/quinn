@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quinn"
+version = "1.0.0"
+description = "Library for augmenting NN with UQ"
+readme = "README.md"
+authors = [
+    {name = "Khachik Sargsyan", email = "ksargsy@sandia.gov"},
+    {name = "Javier Murgoitio-Esandi"},
+    {name = "Oscar Diaz-Ibarra"}
+]
+license = {text = "BSD-3-Clause"}
+keywords = ["uncertainty quantification", "neural networks", "UQ"]
+classifiers = [
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3 :: Only',
+    'Intended Audience :: Science/Research',
+    'Topic :: Scientific/Engineering :: Mathematics',
+    'Natural Language :: English',
+]
+requires-python = ">=3.8"
+
+dependencies = [
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "torch"
+]
+
+[project.urls]
+Homepage = "https://github.com/sandialabs/quinn"
+Repository = "https://github.com/sandialabs/quinn"
+
+[tool.setuptools.packages.find]
+include = ["quinn*"]
+
+[tool.setuptools.package-data]
+quinn = ["*.pdf"]
