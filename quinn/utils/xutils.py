@@ -36,7 +36,7 @@ def savepk(sobj, nameprefix='savestate'):
         sobj (any type): Object to be pickled.
         nameprefix (str, optional): Name prefix.
     """
-    pk.dump(sobj, open(nameprefix + '.pk', 'wb'), -1)
+    pk.dump(sobj, open(nameprefix + '.pk', 'wb'), protocol=pk.HIGHEST_PROTOCOL)
 
 
 def loadpk(nameprefix='savestate'):

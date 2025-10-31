@@ -108,7 +108,7 @@ def lighten_color(color, amount=0.5):
 
 def plot_dm(datas, models, errorbars=None, labels=None, colors=None,
             axes_labels=['Model', 'Apprx'], figname='dm.png',
-            legendpos='in', msize=4):
+            legendpos='in', msize=4, alpha=1.0):
     """Plots data-vs-model and overlays `y=x`.
 
     Args:
@@ -121,6 +121,7 @@ def plot_dm(datas, models, errorbars=None, labels=None, colors=None,
         figname (str, optional): Figure file name.
         legendpos (str, optional): Legend position, 'in' or 'out'
         msize (int, optional): Marker size.
+        alpha (float, optional): Marker opacity, between `0` and `1`. Defaults to 1.
     """
     if errorbars is None:
         erb = False
@@ -164,9 +165,9 @@ def plot_dm(datas, models, errorbars=None, labels=None, colors=None,
                              fmt='o', markersize=msize,
                              markeredgecolor='w',
                              color=colors[i],
-                             ecolor=colors[i], label=labels[i])
+                             ecolor=colors[i], label=labels[i], alpha=alpha)
             else:
-                plt.plot(ddata[:, j], model, 'o', color=colors[i], label=labels[i], markeredgecolor='w', markersize=msize)
+                plt.plot(ddata[:, j], model, 'o', color=colors[i], label=labels[i], markeredgecolor='w', markersize=msize, alpha=alpha)
 
     delt = 0.03 * (yy.max() - yy.min())
     minmax = [yy.min() - delt, yy.max() + delt]
@@ -230,7 +231,7 @@ def parallel_coordinates(parnames, values, labels, savefig='pcoord'):
 
     # Start the figure
     fig=plt.figure(figsize=(14,8))
-    fig.add_axes([0.1,0.25,0.8,0.7])
+    fig.add_axes([0.1,0.25,0.8,0.65])
     ax = plt.gca()
 
     # Categorize
@@ -266,7 +267,7 @@ def parallel_coordinates(parnames, values, labels, savefig='pcoord'):
                     for id in range(n_labels)]
     ax.legend(leg_handlers, ulabels, frameon=False, loc='upper left',
                     ncol=len(labels),
-                    bbox_to_anchor=(0, 1.05, 1, 0))
+                    bbox_to_anchor=(0, 1.15, 1, 0))
 
     # Show or save
     plt.savefig(savefig)
@@ -302,7 +303,7 @@ def plot_yx(x, y, rowcols=None, ylabel='', xlabels=None,
     else:
         rows, cols = rowcols
 
-    fig, axes = plt.subplots(rows, cols, figsize=(8*cols,(2+ypad)*rows),
+    fig, axes = plt.subplots(rows, cols, figsize=(8*cols,(4+ypad)*rows),
                              gridspec_kw={'hspace': ypad, 'wspace': xpad})
 
     if rows * cols > 1:
@@ -329,7 +330,6 @@ def plot_yx(x, y, rowcols=None, ylabel='', xlabels=None,
         ih = i % cols
         iv = i // cols
         axes[ih, iv].remove()
-
 
     plt.savefig(filename)
 
@@ -605,24 +605,19 @@ def plot_jsens(msens,jsens,varname='', inpar_names=None,figname='senscirc.png'):
 
 #############################################################
 
-
-def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=None):
-    """Plots multidimensional samples in a triangular way, i.e. 1d and 2d cuts.
+def plot_tri(xi, yy=None, names=None, msize=3, figname='xsam_tri.png'):
+    """Plots multidimensional samples in a triangular pairwise way.
 
     Args:
         xi (np.ndarray): `(N,d)` array to plot.
+        yy (None, optional): `(N,)` array. Color code the dots with y values. Defaults to None, i.e. no color coding.
         names (list[str], optional): List of `d` names.
         msize (int, optional): Markersize of the 2d plots.
         figname (str, optional): Figure file name.
     """
     nsam, npar = xi.shape
-
-    if zorder is None:
-        zorder = 0
-    if axarr is None:
-        _, axarr = plt.subplots(npar, npar, figsize=(2*npar, 2*npar))
-        if npar==1: axarr=[[axarr]]
-
+    figs, axarr = plt.subplots(npar, npar, figsize=(15, 15))
+    if npar==1: axarr=[[axarr]]
 
     if names is None:
         names = ['p'+str(j) for j in range(npar)]
@@ -630,7 +625,7 @@ def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=
 
     for i in range(npar):
         thisax = axarr[i][i]
-        thisax.plot(np.arange(nsam), xi[:, i], 'o', color=clr, markersize=msize, zorder=zorder)
+        thisax.plot(np.arange(nsam), xi[:, i], linewidth=1)
 
         if i == 0:
             thisax.set_ylabel(names[i])
@@ -645,8 +640,10 @@ def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=
             thisax = axarr[i][j]
             axarr[j][i].axis('off')
 
-            thisax.plot(xi[:, j], xi[:, i], 'o', color=clr, markersize=msize, zorder=zorder)
-
+            if yy is not None:
+                thisax.scatter(xi[:, j], xi[:, i],c=yy, s=msize, alpha=0.8)
+            else:
+                thisax.plot(xi[:, j], xi[:, i], 'o', markersize=msize)
 
             # x0, x1 = thisax.get_xlim()
             # y0, y1 = thisax.get_ylim()
@@ -659,9 +656,7 @@ def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=
             if j > 0:
                 thisax.yaxis.set_ticklabels([])
 
-    plt.tight_layout()
-    if figname is not None:
-        plt.savefig(figname)
+    plt.savefig(figname)
 
 #############################################################
 
@@ -871,7 +866,7 @@ def plot_pdfs(ind_show=None, plot_type='tri', pdf_type='hist',
         sys.exit()
 
     for i in range(npar):
-        print("Quantity # ", ind_show[i], "; Name : ", names[ind_show[i]])
+        print(f"Plotting PDFs for {names[ind_show[i]]}")
         if plot_type == 'tri':
             thisax = axarr[i][i]
         elif plot_type == 'inds':
@@ -1225,7 +1220,7 @@ def plot_1d_anchored_single(models, modelpars,
     if anchor2 is None:
         anchor2 = sample_sphere(center=anchor1, rad=scale, nsam=1).reshape(-1,)
         origin, e1 = anchor1, anchor2-anchor1
-        ticklabels = [r"A$-\Delta$", f'A', r'A$+\Delta$']
+        ticklabels = [rf"A$-\Delta$", f'A', rf'A$+\Delta$']
     else:
         origin, e1 = (anchor1+anchor2)/2., (anchor2-anchor1)/2.
         ticklabels = [r'A$_1$', '', r'A$_2$']
@@ -1687,7 +1682,7 @@ def plot_samples_pdfs(xx_list, legends=None, colors=None, file_prefix='x', title
 
     return
 
-def plot_1d(func, domain, ax=None, idim=0, odim=0, nom=None, ngr=100, color='orange', lstyle='-', figname='func1d.png'):
+def plot_1d(func, domain, ax=None, idim=0, odim=0, nom=None, ngr=100, color='orange', label='', lstyle='-', figname='func1d.png'):
     """Plotting 1d slice of a function.
 
     Args:
@@ -1699,6 +1694,7 @@ def plot_1d(func, domain, ax=None, idim=0, odim=0, nom=None, ngr=100, color='ora
         nom (np.ndarray, optional): Nominal value to fix non-plotted dimensions at. An array of size d. If None, uses the domain center.
         ngr (int, optional): Number of grid points.
         color (str, optional): Color of the graph.
+        label (str, optional): Label of the graph.
         lstyle (str, optional): Linestyle of the graph.
         figname (str, optional): Figure name to save.
     """
@@ -1716,7 +1712,7 @@ def plot_1d(func, domain, ax=None, idim=0, odim=0, nom=None, ngr=100, color='ora
     xg[:, idim] = xg1
     yg = func(xg)[:, odim]
 
-    ax.plot(xg[:, idim], yg, color=color, linestyle=lstyle)
+    ax.plot(xg[:, idim], yg, color=color, label=label, linestyle=lstyle)
     plt.savefig(figname)
 
     return
@@ -1784,3 +1780,243 @@ def plot_parity(y1, y2, labels=['y1', 'y2'], filename='parity.png'):
     plt.ylabel(labels[1])
     plt.savefig(filename)
 
+
+#############################################################
+
+def plot_cov(mm, cc, ngr=100, f=3., pnames=None, ax=None, savefig=False):
+    """Plotting covariance contour given mean and covariance matrix.
+
+    Args:
+        mm (np.ndarray): Mean, an 1d array of size `(2,)`.
+        cc (np.ndarray): Covariance matrix, a 2d array of size `(2,2)`.
+        ngr (int, optional): Number of grid points per dimension, i.e. resolution.
+        f (float, optional): Factor for the plotting range in terms of standard deviations.
+        pnames (list, optional): List of parameter names. If None, generic names are used.
+        ax (plt.Axes, optional): Axis handle. If None, use the current axis.
+        savefig (bool, optional): Whether to save the figure or not.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    if pnames is None:
+        pnames = ['p1', 'p2']
+
+    x = np.linspace(mm[0]-f*np.sqrt(cc[0, 0]), mm[0]+f*np.sqrt(cc[0,0]), ngr)
+    y = np.linspace(mm[1]-f*np.sqrt(cc[1, 1]), mm[1]+f*np.sqrt(cc[1,1]), ngr)
+    X, Y = np.meshgrid(x, y)
+
+    try:
+        rv = ss.multivariate_normal(mm, cc, allow_singular=True)
+        XY = np.dstack((X, Y))
+
+        Z = rv.pdf(XY)
+        ax.contour(X,Y,Z)
+
+        if savefig:
+            ax.set_xlabel(pnames[0])
+            ax.set_ylabel(pnames[1])
+            plt.savefig(f'cov_{pnames[0]}_{pnames[1]}.png')
+
+    except ValueError:
+        print(f"Covariance for pair ({i},{j}) is not positive-semidefinite.")
+
+
+def plot_cov_tri(mean, cov, names=None, figname='cov_tri.png'):
+    """Plots covariance in a triangular pairwise way.
+
+    Args:
+        mean (np.ndarray): Mean, an 1d array of size `(npar,)`.
+        cov (np.ndarray): Covariance matrix, a 2d array of size `(npar,npar)`.
+        names (list, optional): List of parameter names. If None, generic names are used.
+        figname (str, optional): Figure filename to save.
+    """
+    npar = mean.shape[0]
+    figs, axarr = plt.subplots(npar, npar, figsize=(15, 15))
+    if npar==1: axarr=[[axarr]]
+
+    if names is None:
+        names = ['p'+str(j) for j in range(npar)]
+    assert(len(names)==npar)
+
+    for i in range(npar):
+        thisax = axarr[i][i]
+        x = np.linspace(mean[i]-3.0*np.sqrt(cov[i,i]), mean[i]+3.0*np.sqrt(cov[i,i]), 100)
+        rv = ss.norm(mean[i], np.sqrt(cov[i,i]))
+        z = rv.pdf(x)
+        thisax.plot(x, z, 'b-')
+
+        if i == 0:
+            thisax.set_ylabel(names[i])
+        if i == npar - 1:
+            thisax.set_xlabel(names[i])
+        if i > 0:
+            thisax.yaxis.set_ticks_position("right")
+        # thisax.yaxis.set_label_coords(-0.12, 0.5)
+
+
+        for j in range(i):
+            thisax = axarr[i][j]
+            axarr[j][i].axis('off')
+
+            mm = np.array([mean[j], mean[i]])
+            cc = np.array([[cov[j,j], cov[i,j]],[cov[j,i], cov[i,i]]])
+            plot_cov(mm, cc, f=3., pnames=[f'p{i}', f'p{j}'], ngr=100, ax=thisax, savefig=False)
+
+            # x0, x1 = thisax.get_xlim()
+            # y0, y1 = thisax.get_ylim()
+            # #thisax.set_aspect((x1 - x0) / (y1 - y0))
+
+            if j == 0:
+                thisax.set_ylabel(names[i])
+            if i == npar - 1:
+                thisax.set_xlabel(names[j])
+            if j > 0:
+                thisax.yaxis.set_ticklabels([])
+
+    plt.savefig(figname)
+
+####################################################################################
+
+
+def plot_sensmat(sensdata,pars,cases,par_labels=[],case_labels=[],cutoff=-1000., figname='sensmat.png'):
+    r"""Plot sensitivity matrix as a heatmap or bar plot.
+
+    Args:
+        sensdata (np.ndarray): 2d array of sensitivity data, size (ncases, npars).
+        pars (list): List of parameter names.
+        cases (list): List of case names.
+        par_labels (list, optional): List of parameter labels for plotting. Defaults to None, which uses generic names.
+        case_labels (list, optional): List of case labels for plotting. Defaults to None, which uses generic names.
+        cutoff (float, optional): Cutoff value for sensitivity inclusion. Defaults to -1000.
+        figname (str, optional): Figure filename to save. Defaults to 'sensmat.png'.
+    """
+
+    cdict = mpl.cm.jet._segmentdata.copy()
+    cdict['red']=tuple([tuple([0.0,  1,   1  ]),
+                        tuple([0.01, 0,   0  ]),
+                        tuple([0.35, 0,   0  ]),
+                        tuple([0.66, 1,   1  ]),
+                        tuple([0.89, 1,   1  ]),
+                        tuple([1,    0.5, 0.5])
+                        ]
+                       )
+    cdict['green']=tuple([tuple([0.0,   1, 1]),
+                          tuple([0.01,  0, 0]),
+                          tuple([0.125, 0, 0]),
+                          tuple([0.375, 1, 1]),
+                          tuple([0.64,  1, 1]),
+                          tuple([0.91,  0, 0]),
+                          tuple([1,     0, 0])
+                          ]
+                         )
+    cdict['blue']=tuple([tuple([0,    1.0,1.0]),
+                         tuple([0.01, 0.5,0.5]),
+                         tuple([0.11, 1,  1  ]),
+                         tuple([0.34, 1,  1  ]),
+                         tuple([0.65, 0,  0  ]),
+                         tuple([1,    0,  0  ])
+                         ]
+                        )
+
+
+    cp=mpl.colors.LinearSegmentedColormap('colormap',cdict,64)
+
+    # Read varfrac files and retain indices of important params
+    vlst=[]
+    allSens=[]
+    for nm in range(len(cases)):
+        #vfr=np.array(column(readfile("varfrac."+nm+".dat")[0],0))
+        vfr=sensdata[nm,:] #np.array(column(readfile(nm+".vf.dat")[0],0))
+        allSens.append(vfr)
+        vlst.append([ n for n,i in enumerate(vfr) if i>=cutoff ])
+    # Get union
+    allV=[]
+    for i in range(len(vlst)):
+        allV=list(set(allV) | set(vlst[i]))
+    allV=np.sort(allV)
+    # Create matrix, populate, and rescale
+    nobs=len(cases);
+    npar=len(allV);
+    print("Number of observables plotted = %d" % nobs)
+    print("Number of parameters plotted = %d" % npar)
+
+    if par_labels is None:
+        par_labels = ['p'+str(j) for j in range(npar)]
+    if case_labels is None:
+        case_labels = ['out'+str(j) for j in range(nobs)]
+
+
+    jsens=np.array(np.zeros([nobs,npar]));
+    for i in range(nobs):
+        for j in range(npar):
+            jsens[i,j]=allSens[i][allV[j]];
+    #for i in range(nobs):
+    #    jsens[i]=jsens[i]/jsens[i].max();
+    jsens[np.where(jsens==0)]=0.5*jsens[np.where(jsens>0)].min();
+    #for i in range(nobs):
+     #   for j in range(npar):
+      #      jsens[i,j]=np.log10(jsens[i,j]);
+
+    par_labels_sorted=[];
+    for i in allV:
+        par_labels_sorted.append(par_labels[i]);
+    # make fig
+    fs1=13;
+    fig = plt.figure(figsize=(10,3.9));
+    ax=fig.add_axes([0.12, 0.27, 0.88, 0.68]);
+    cs=ax.pcolor(jsens,cmap=cp);
+    #cs=ax.pcolor(jsens,cmap=mpl.cm.jet)
+    ax.set_xlim([0,npar]);
+    ax.set_ylim([0,nobs]);
+    ax.set_xticks([0.5+i for i in range(npar)]);
+    ax.set_yticks([0.4+i for i in range(nobs)]);
+    ax.set_yticklabels([case_labels[i] for i in range(nobs)],fontsize=fs1);
+    ax.set_xticklabels([par_labels_sorted[i] for i in range(npar)],rotation=45,fontsize=fs1);
+    ax.tick_params(length=0.0)
+    cbar=plt.colorbar(cs)
+    #cbar.set_ticks(range(-13,1,1))
+    #cbar.set_ticklabels(['$10^{'+str(i)+'}$' for i in range(-13,1,1)])
+
+    ax.grid(False);
+    plt.savefig(figname)
+
+
+def plot_joy(sams_list, xcond, outnames, color_list, nominal=None, offset_factor=1.0, ax=None, figname='joyplot.png'):
+    r"""Plots a joyplot of multiple sample sets along given output conditions.
+
+    Args:
+        sams_list (list[np.ndarray]): List of sample sets, each in a 2d array of size `(M,N)`.
+        xcond (list[float]): List of output condition values, length N.
+        outnames (list[str]): List of output condition names, length N.
+        color_list (list[str]): List of colors for each sample set.
+        nominal (np.ndarray, optional): Nominal values for each output condition, an 1d array of size `(N,)`. Defaults to None.
+        offset_factor (float, optional): Factor to scale the pdf heights. Defaults to 1.0.
+        ax (plt.Axes, optional): Axis handle. If None, use the current axis.
+        figname (str, optional): Figure filename to save.
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    for ic, xc in enumerate(xcond):
+        # plot gray horizontal lines where bottom of each pdf will sit
+        offset = xc
+        for isam, sams in enumerate(sams_list):
+            a = 4.
+            pnom = np.mean(sams[:, ic])
+            pdel = np.std(sams[:, ic])
+            pgrid = np.linspace(pnom - a * pdel, pnom + a * pdel, 111)
+            kde_py = ss.gaussian_kde(sams[:, ic], 'silverman')
+            pdf = kde_py(pgrid)
+            ff = offset_factor
+            ax.fill_between(pgrid, xc * np.ones_like(pgrid), ff * pdf + offset,
+                            fc=color_list[isam], ec='black',
+                            lw=1, label='', alpha=0.4)
+        if nominal is not None:
+            ax.plot([nominal[ic], nominal[ic]], [
+                    offset, offset + 1.2 * ff * np.max(pdf)], 'k--', lw=1)
+    ax = plt.gca()
+    ax.grid(False, axis='x')
+    ax.set_yticks(xcond)
+    ax.set_yticklabels(outnames)
+    plt.tight_layout()
+    plt.savefig(figname)

@@ -10,6 +10,27 @@ from .tchutils import tch
 from .losses import NegLogPost, GradLoss
 
 
+class CustomLoss(torch.nn.Module):
+
+    def __init__(self, nnmodel):
+
+        super().__init__()
+        self.nnmodel = nnmodel # or a deepcopy?
+
+    def forward(self, inputs, targets):
+
+
+        predictions = self.nnmodel(inputs)
+        #print(predictions[:5])
+
+        fit = torch.mean((torch.log(predictions-self.nnmodel.yshift)-torch.log(targets-self.nnmodel.yshift))**2)
+        #fit = torch.mean((predictions-targets)**2)
+
+        penalty = 0.0 #self.lam * torch.mean((self.nnmodel(self.bdry1)-self.nnmodel(self.bdry2))**2)
+        loss =  fit + penalty
+
+        return loss
+
 def nnfit(nnmodel, xtrn, ytrn, val=None,
           loss_fn='mse', loss_xy=None,
           datanoise=None, wd=0.0,
@@ -60,6 +81,8 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
                 return loss(nnmodel(x), y)
         elif loss_fn == 'logpost':
             loss_xy = NegLogPost(nnmodel, ntrn, datanoise, priorparams)
+        elif loss_fn == 'custom':
+            loss_xy = CustomLoss(nnmodel)
         else:
             print(f"Loss function {loss_fn} is unknown. Exiting.")
             sys.exit()

@@ -69,6 +69,9 @@ class QUiNNBase():
 
         return y
 
+    def predict(self, x):
+        return self.predict_mom_sample(x)[0]
+
     def predict_mom_sample(self, x, msc=0, nsam=1000):
         r"""Predict function, given input :math:`x`.
 
@@ -90,8 +93,6 @@ class QUiNNBase():
                 yvar[:, iout] = np.diag(ycov[:,:,iout])
         elif msc==1:
             ycov = None
-            for iout in range(nout):
-                ycov[:,:,iout] = np.cov(y[:,:,iout], rowvar=False, ddof=1)
             yvar = np.var(y, axis=0, ddof=1)
         elif msc==0:
             ycov = None
@@ -159,7 +160,7 @@ class QUiNNBase():
             if figname is None:
                 figname_ = 'fitdiag_o'+str(iout)+'.png'
             else:
-                figname = figname_.copy()
+                figname_ = figname
 
             plot_dm(x1, x2, errorbars=ee, labels=labels, colors=colors,
                     axes_labels=[f'Model output # {iout+1}', f'Fit output # {iout+1}'],
