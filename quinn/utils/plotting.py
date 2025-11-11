@@ -605,19 +605,25 @@ def plot_jsens(msens,jsens,varname='', inpar_names=None,figname='senscirc.png'):
 
 #############################################################
 
-def plot_tri(xi, yy=None, names=None, msize=3, figname='xsam_tri.png'):
-    """Plots multidimensional samples in a triangular pairwise way.
+def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=None):
+    """Plots multidimensional samples in a triangular way, i.e. 1d and 2d cuts.
 
     Args:
         xi (np.ndarray): `(N,d)` array to plot.
-        yy (None, optional): `(N,)` array. Color code the dots with y values. Defaults to None, i.e. no color coding.
         names (list[str], optional): List of `d` names.
         msize (int, optional): Markersize of the 2d plots.
+        axarr (None, optional): Optional array of axes.
+        clr (str, optional): Color.
+        zorder (None, optional): Order of plotting.
         figname (str, optional): Figure file name.
+
     """
     nsam, npar = xi.shape
-    figs, axarr = plt.subplots(npar, npar, figsize=(15, 15))
-    if npar==1: axarr=[[axarr]]
+    if zorder is None:
+        zorder = 0
+    if axarr is None:
+        _, axarr = plt.subplots(npar, npar, figsize=(2*npar, 2*npar))
+        if npar==1: axarr=[[axarr]]
 
     if names is None:
         names = ['p'+str(j) for j in range(npar)]
@@ -625,7 +631,8 @@ def plot_tri(xi, yy=None, names=None, msize=3, figname='xsam_tri.png'):
 
     for i in range(npar):
         thisax = axarr[i][i]
-        thisax.plot(np.arange(nsam), xi[:, i], linewidth=1)
+        thisax.plot(np.arange(nsam), xi[:, i], 'o', color=clr, markersize=msize, zorder=zorder)
+
 
         if i == 0:
             thisax.set_ylabel(names[i])
@@ -640,10 +647,9 @@ def plot_tri(xi, yy=None, names=None, msize=3, figname='xsam_tri.png'):
             thisax = axarr[i][j]
             axarr[j][i].axis('off')
 
-            if yy is not None:
-                thisax.scatter(xi[:, j], xi[:, i],c=yy, s=msize, alpha=0.8)
-            else:
-                thisax.plot(xi[:, j], xi[:, i], 'o', markersize=msize)
+            thisax.plot(xi[:, j], xi[:, i], 'o', color=clr, markersize=msize, zorder=zorder)
+
+
 
             # x0, x1 = thisax.get_xlim()
             # y0, y1 = thisax.get_ylim()
@@ -656,7 +662,9 @@ def plot_tri(xi, yy=None, names=None, msize=3, figname='xsam_tri.png'):
             if j > 0:
                 thisax.yaxis.set_ticklabels([])
 
-    plt.savefig(figname)
+    plt.tight_layout()
+    if figname is not None:
+        plt.savefig(figname)
 
 #############################################################
 
