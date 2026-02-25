@@ -1,0 +1,11 @@
+/* Constrain inheritance diagrams and graphviz images to fit the page */
+div.graphviz {
+    overflow-x: auto;
+    text-align: center;
+}
+
+div.graphviz img,
+div.graphviz object {
+    max-width: 100%;
+    height: auto;
+}

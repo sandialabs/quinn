@@ -231,8 +231,9 @@ inheritance_node_attrs = dict(shape='ellipse', fontsize=14, height=0.75,
                               color='dodgerblue1', style='filled')
 
 #inheritance_graph_attrs = dict(rankdir="TB", size='""')
-inheritance_graph_attrs = dict(rankdir="LR", size='"6.0, 8.0"',
-                              fontsize=14, color='dodgerblue1', ratio='compress', style='filled')
+inheritance_graph_attrs = dict(rankdir="LR", size='"12.0, 8.0"',
+                              fontsize=14, color='dodgerblue1', ratio='compress', style='filled',
+                              dpi='150')
 
 autodoc_member_order = 'bysource'
 
@@ -240,5 +241,9 @@ bibtex_bibfiles = ['references.bib']
 bibtex_default_style = 'unsrt'
 bibtex_encoding = 'latin'
 
-graphviz_output_format = 'svg'
+graphviz_output_format = 'png'
+
+# Custom CSS
+def setup(app):
+    app.add_css_file('custom.css')
 
