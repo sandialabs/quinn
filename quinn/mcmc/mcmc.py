@@ -7,7 +7,7 @@ import numpy as np
 
 
 class MCMCBase(object):
-    """Base class for MCMC.
+    r"""Base class for MCMC.
 
     Attributes:
         logPost (callable): Log-posterior evaluator function. It has a singature of logPost(model_parameters, \**postInfo) returning a float.
@@ -23,7 +23,7 @@ class MCMCBase(object):
 
 
     def setLogPost(self, logPost, logPostGrad, **postInfo):
-        """Setting logposterior and its gradient functions.
+        r"""Setting logposterior and its gradient functions.
 
         Args:
             logPost (callable): Log-posterior evaluator function. It has a singature of logPost(model_parameters, \**postInfo) returning a float.

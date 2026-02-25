@@ -7,34 +7,15 @@ import torch
 import matplotlib.pyplot as plt
 
 from .tchutils import tch
-from .losses import NegLogPost, GradLoss
+from .losses import NegLogPost, GradLoss, LogLoss
 
 
-class CustomLoss(torch.nn.Module):
 
-    def __init__(self, nnmodel):
-
-        super().__init__()
-        self.nnmodel = nnmodel # or a deepcopy?
-
-    def forward(self, inputs, targets):
-
-
-        predictions = self.nnmodel(inputs)
-        #print(predictions[:5])
-
-        fit = torch.mean((torch.log(predictions-self.nnmodel.yshift)-torch.log(targets-self.nnmodel.yshift))**2)
-        #fit = torch.mean((predictions-targets)**2)
-
-        penalty = 0.0 #self.lam * torch.mean((self.nnmodel(self.bdry1)-self.nnmodel(self.bdry2))**2)
-        loss =  fit + penalty
-
-        return loss
 
 def nnfit(nnmodel, xtrn, ytrn, val=None,
           loss_fn='mse', loss_xy=None,
           datanoise=None, wd=0.0,
-          priorparams=None,
+          priorparams=None, lossparams=None,
           optimizer='adam',
           lrate=0.1, lmbd=None, scheduler_lr=None,
           nepochs=5000, batch_size=None,
@@ -54,6 +35,7 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
         datanoise (None, optional): Datanoise for certain loss types.
         wd (float, optional): Optional weight decay (L2 regularization) parameter.
         priorparams (dict, optional): Dictionary of prior parameters.
+        lossparams (None, optional): Optional parameters for loss functions.
         optimizer (str, optional): Optimizer string. Currently implemented 'adam' (default) and 'sgd'.
         lrate (float, optional): Learning rate or learning rate schedule factor. Default is 0.1.
         lmbd (callable, optional): Optional learning rate schedule. The actual learning rate is `lrate * lmbd(epoch)`.
@@ -81,8 +63,8 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
                 return loss(nnmodel(x), y)
         elif loss_fn == 'logpost':
             loss_xy = NegLogPost(nnmodel, ntrn, datanoise, priorparams)
-        elif loss_fn == 'custom':
-            loss_xy = CustomLoss(nnmodel)
+        elif loss_fn == 'logloss':
+            loss_xy = LogLoss(nnmodel, lossparams)
         else:
             print(f"Loss function {loss_fn} is unknown. Exiting.")
             sys.exit()
@@ -231,6 +213,6 @@ def nnfit(nnmodel, xtrn, ytrn, val=None,
             plt.savefig(f'loss_history{lhist_suffix}.png')
             plt.yscale('log')
             plt.savefig(f'loss_history{lhist_suffix}_log.png')
-            plt.clf()
+            plt.close()
 
     return fit_info

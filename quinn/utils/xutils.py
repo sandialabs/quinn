@@ -36,7 +36,8 @@ def savepk(sobj, nameprefix='savestate'):
         sobj (any type): Object to be pickled.
         nameprefix (str, optional): Name prefix.
     """
-    pk.dump(sobj, open(nameprefix + '.pk', 'wb'), protocol=pk.HIGHEST_PROTOCOL)
+    with open(nameprefix + '.pk', 'wb') as f:
+        pk.dump(sobj, f, protocol=pk.HIGHEST_PROTOCOL)
 
 
 def loadpk(nameprefix='savestate'):
@@ -48,7 +49,8 @@ def loadpk(nameprefix='savestate'):
     Returns:
         any type: Unpickled object
     """
-    return pk.load(open(nameprefix + '.pk', 'rb'))
+    with open(nameprefix + '.pk', 'rb') as f:
+        return pk.load(f)
 
 ####################################################################
 ####################################################################
@@ -167,7 +169,7 @@ def get_pdf(data, target):
     assert(np.prod(np.var(data, axis=0))>0.0)
 
     # Python Scipy built-in method of KDE
-    kde_py=stats.kde.gaussian_kde(data.T)
+    kde_py=stats.gaussian_kde(data.T)
     dens=kde_py(target.T)
 
     # Return the target points and the probability density

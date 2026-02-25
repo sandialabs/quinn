@@ -5,7 +5,7 @@ import numpy as np
 from .mcmc import MCMCBase
 
 class AMCMC(MCMCBase):
-    """Adaptive MCMC class.
+    r"""Adaptive MCMC class.
 
     Attributes:
         cov_ini (np.ndarray): Initial covariance array of size `(p,p)`.
@@ -15,7 +15,7 @@ class AMCMC(MCMCBase):
         tadapt (int): Frequency for adapting/updating the covariance.
     """
     def __init__(self, cov_ini=None, gamma=0.1, t0=100, tadapt=1000):
-        """Initialization.
+        r"""Initialization.
 
         Args:
             cov_ini (np.ndarray, optional): Initial covariance array of size `(p,p)`. Defaults to None which sets the initial covariance as some fraction of the chain state.

@@ -16,20 +16,22 @@ QUiNN's documentation
    rvar.rst
    vi.rst
    ens.rst
-..   tests.rst
 
 .. toctree::
    :maxdepth: 4
    :caption: Examples:
 
-..   examples.rst
+   examples.rst
 
 
 .. toctree::
    :maxdepth: 4
    :caption: Theory:
 
-..   math.rst
+   nnarch.rst
+   math.rst
+   loss.rst
+   nnfit.rst
 
 .. toctree::
    :maxdepth: 4
@@ -37,6 +39,7 @@ QUiNN's documentation
 
    ind.rst
    refs.rst
-..   diagram.rst
+   tests.rst
+   diagram.rst
 
 

@@ -6,6 +6,28 @@ import torch.autograd.functional as F
 
 from .tchutils import tch
 
+class LogLoss(torch.nn.Module):
+
+    def __init__(self, nnmodel, lossparams):
+
+        super().__init__()
+        self.nnmodel = nnmodel # or a deepcopy?
+        self.yshift = lossparams[0]
+
+    def forward(self, inputs, targets):
+
+
+        predictions = self.nnmodel(inputs)
+        #print(predictions[:5])
+
+        fit = torch.mean((torch.log(predictions-self.yshift)-torch.log(targets-self.yshift))**2)
+        #fit = torch.mean((predictions-targets)**2)
+
+        penalty = 0.0 #self.lam * torch.mean((self.nnmodel(self.bdry1)-self.nnmodel(self.bdry2))**2)
+        loss =  fit + penalty
+
+        return loss
+
 class PeriodicLoss(torch.nn.Module):
     r"""Example of a periodic loss regularization.
 

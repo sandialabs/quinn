@@ -2,8 +2,8 @@ Class inheritance diagram
 =========================
 
 .. digraph:: foo
-
-   "bar" -> "baz" -> "quux";
+   :align: center
+   :caption: Class inheritance diagram for QUiNN's main classes.
    
 .. inheritance-diagram:: quinn.solvers.quinn quinn.solvers.nn_ens quinn.solvers.nn_mcmc quinn.solvers.nn_vi quinn.solvers.nn_laplace quinn.solvers.nn_swag quinn.solvers.nn_rms 
 

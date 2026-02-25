@@ -2,6 +2,7 @@
 """Various useful PyTorch related utilities."""
 
 import copy
+import numpy as np
 import torch
 
 
@@ -16,12 +17,15 @@ def tch(arr, device='cpu', rgrad=False):
         rgrad (bool, optional): Whether to require gradient tracking or not.
 
     Returns:
-        torch.Tensor: Torch tensor of the same size as the input numpy array.
+        torch.Tensor: Torch tensor matching the default dtype for floating-point inputs.
     """
 
-    # return torch.from_numpy(arr.astype(np.double)).to(device)
-    # return torch.from_numpy(arr).double()
-    return torch.tensor(arr, requires_grad=rgrad, device=device)
+    if isinstance(arr, list):
+        arr = np.array(arr)
+    t = torch.tensor(arr, requires_grad=rgrad, device=device)
+    if t.is_floating_point():
+        t = t.to(torch.get_default_dtype())
+    return t
 
 
 def npy(arr):

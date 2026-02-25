@@ -106,7 +106,9 @@ class MLPBase(torch.nn.Module):
         """
         #self.fitdict = locals()
         fit_info = nnfit(self, xtrn, ytrn, **kwargs)
-        self.best_model = fit_info['best_nnmodel']
+        # Use object.__setattr__ to prevent nn.Module from registering
+        # best_model as a submodule (which would double the parameter count).
+        object.__setattr__(self, 'best_model', fit_info['best_nnmodel'])
         self.history = fit_info['history']
         self.trained = True
          
