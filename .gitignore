@@ -131,3 +131,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Output of examples/demo_1d.py
+demo_1d_out/

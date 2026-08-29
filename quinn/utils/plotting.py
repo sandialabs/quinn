@@ -202,7 +202,7 @@ def plot_xrv(xsam, prefix='xsam'):
     """Plotting samples one at a time, and one dimension vs the other.
 
     Args:
-        xsam (np.ndarray): A `(N,d)` numpy array of samples
+        xsam (np.ndarray): A :math:`(N,d)` numpy array of samples
         prefix (str, optional): Prefix for filenames of the figures.
     """
     nsam, ndim = xsam.shape
@@ -224,7 +224,7 @@ def parallel_coordinates(parnames, values, labels, savefig='pcoord'):
 
     Args:
         parnames (list[str]): list of `d` parameter names
-        values (np.ndarray): `(d, N)` array of `N` data points with `d` parameters
+        values (np.ndarray): :math:`(d, N)` array of `N` data points with `d` parameters
         labels (list[str]): list of `N` labels/categories, one per point
         savefig (str, optional): figure name to save
     """
@@ -281,8 +281,8 @@ def plot_yx(x, y, rowcols=None, ylabel='', xlabels=None,
     """Plots an output vs one input at a time in a matrix of figures.
 
     Args:
-        x (np.ndarray): An `(N,d)` input array.
-        y (np.ndarray): An `(N,)` output array.
+        x (np.ndarray): An :math:`(N,d)` input array.
+        y (np.ndarray): An :math:`(N,)` output array.
         rowcols (tuple[int], optional): A pair of integers, rows and columns.
         ylabel (str, optional): Y-axis label.
         xlabels (list[str], optional): List of X-axis labels.
@@ -347,7 +347,7 @@ def plot_sens(sensdata, pars, cases,
     """Plots sensitivities for multiple observables with respect to multiple parameters.
 
     Args:
-        sensdata (np.ndarray): An array of sensitivities of size `(o,d)`.
+        sensdata (np.ndarray): An array of sensitivities of size :math:`(o,d)`.
         pars (list[int]): List of parameter indices to use. All should be less than `d`.
         cases (list[int]): List of output indices to use. All should be less than `o`.
         vis (str, optional): Plot type 'bar' or 'graph' (the latter is not used/tested often).
@@ -605,15 +605,17 @@ def plot_jsens(msens,jsens,varname='', inpar_names=None,figname='senscirc.png'):
 
 #############################################################
 
-def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=None):
+def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', yy=None, lsize=12, zorder=None, figname=None):
     """Plots multidimensional samples in a triangular way, i.e. 1d and 2d cuts.
 
     Args:
-        xi (np.ndarray): `(N,d)` array to plot.
+        xi (np.ndarray): :math:`(N,d)` array to plot.
         names (list[str], optional): List of `d` names.
         msize (int, optional): Markersize of the 2d plots.
         axarr (None, optional): Optional array of axes.
-        clr (str, optional): Color.
+        clr (str, optional): Optional color.
+        yy (None, optional): Optional if we want to color-code by value. Overwrites clr.
+        lsize (int, optional): Label size. Defaults to 12.
         zorder (None, optional): Order of plotting.
         figname (str, optional): Figure file name.
 
@@ -631,13 +633,20 @@ def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=
 
     for i in range(npar):
         thisax = axarr[i][i]
-        thisax.plot(np.arange(nsam), xi[:, i], 'o', color=clr, markersize=msize, zorder=zorder)
+        thisax.tick_params(labelsize=lsize)
+
+        if yy is None:
+            thisax.plot(np.arange(nsam), xi[:, i], 'o', color=clr, markersize=msize, zorder=zorder)
+        else:
+            #thisax.plot(np.arange(nsam), xi[:, i], '-', linewidth=0.5, color='k', zorder=zorder)
+            thisax.scatter(np.arange(nsam), xi[:, i], c=yy, s=msize, zorder=zorder)
+
 
 
         if i == 0:
-            thisax.set_ylabel(names[i])
+            thisax.set_ylabel(names[i], size=lsize)
         if i == npar - 1:
-            thisax.set_xlabel(names[i])
+            thisax.set_xlabel(names[i], size=lsize)
         if i > 0:
             thisax.yaxis.set_ticks_position("right")
         # thisax.yaxis.set_label_coords(-0.12, 0.5)
@@ -645,9 +654,14 @@ def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=
 
         for j in range(i):
             thisax = axarr[i][j]
+            thisax.tick_params(labelsize=lsize)
+
             axarr[j][i].axis('off')
 
-            thisax.plot(xi[:, j], xi[:, i], 'o', color=clr, markersize=msize, zorder=zorder)
+            if yy is None:
+                thisax.plot(xi[:, j], xi[:, i], 'o', color=clr, markersize=msize,   zorder=zorder)
+            else:
+                thisax.scatter(xi[:, j], xi[:, i], c=yy, s=msize,   zorder=zorder)
 
 
 
@@ -656,11 +670,11 @@ def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=
             # #thisax.set_aspect((x1 - x0) / (y1 - y0))
 
             if j == 0:
-                thisax.set_ylabel(names[i])
+                thisax.set_ylabel(names[i], size=lsize)
             if i == npar - 1:
-                thisax.set_xlabel(names[j])
+                thisax.set_xlabel(names[j], size=lsize)
             if j > 0:
-                thisax.yaxis.set_ticklabels([])
+                thisax.yaxis.set_ticklabels([], size=lsize)
 
     plt.tight_layout()
     if figname is not None:
@@ -668,14 +682,15 @@ def plot_tri(xi, names=None, msize=3, axarr=None, clr='b', zorder=None, figname=
 
 #############################################################
 
-def plot_pdf1d(sams, pltype='hist', color='b',
+def plot_pdf1d(sams, pltype='hist', color='b', lstyle='--',
                lw=1.0, nom_height_factor=10., histalpha=1.0, label='', ax=None):
     """Plotting 1d PDFs of samples.
 
     Args:
-        sams (np.ndarray): The `(N,)` samples of interest.
+        sams (np.ndarray): The :math:`(N,)` samples of interest.
         pltype (str, optional): Plot type. Options are 'kde' (Kernel Density Estimation), 'hist' (Histogram), 'sam' (plot samples as dots on x-axis), 'nom' (plot a nominal vertical line)
         color (str, optional): Color.
+        lstyle (str, optional): Line style.
         lw (float, optional): Line width, when relevant.
         nom_height_factor (float, optional): Controls the height of the nominal vertical bar.
         histalpha (float, optional): Opacity of histogram, between `0` and `1`.
@@ -709,7 +724,7 @@ def plot_pdf1d(sams, pltype='hist', color='b',
         y1, y2 = ax.get_ylim()
         y2f = nom_height_factor
         for sam in sams:
-            ax.plot([sam, sam], [y1, y2 / y2f], '--', color=color, linewidth=lw, label=label)
+            ax.plot([sam, sam], [y1, y2 / y2f], lstyle, color=color, linewidth=lw, label=label)
 
     else:
         print("Plot type is not recognized. Exiting")
@@ -726,8 +741,8 @@ def plot_pdf2d(samsx, samsy, pltype='kde', ncont=10,
     """Plot 2d contour plot of a PDF given two sets of samples.
 
     Args:
-        samsx (np.ndarray): First `(N,)` samples of interest.
-        samsy (np.ndarray): Second `(N,)` samples of interest.
+        samsx (np.ndarray): First :math:`(N,)` samples of interest.
+        samsy (np.ndarray): Second :math:`(N,)` samples of interest.
         pltype (str, optional): Plot type. Options are Options are 'kde' (Kernel Density Estimation), 'sam' (plot samples only).
         ncont (int, optional): Number of contours.
         color (str, optional): Color. If None, uses the multicolor default of matplotlib.
@@ -784,13 +799,14 @@ def plot_pdfs(ind_show=None, plot_type='tri', pdf_type='hist',
     Args:
         ind_show (list[int], optional): Indices of dimensions (columns of samples) to show.
         plot_type (str, optional): Plot type. Options are 'tri' (trianguar plot of 1d/2d marginals), 'inds' (1d marginals in a single figure), 'ind' (individual files for 1d and 2d marginal PDFs)
-        pdf_type (str, optional): 1d PDF type. Options are 'hist' (histogram) or 'kde' (Kernel Density Estimation)
-        samples_ (str or np.ndarray, optional): Filename or `(N,d)` numpy array of samples.
+        pdf_type (str, optional): 1d PDF type. Options are 'hist' (histogram),
+            'kde' (Kernel Density Estimation), or 'sam' (raw samples only).
+        samples_ (str or np.ndarray, optional): Filename or :math:`(N,d)` numpy array of samples.
         burnin (int, optional): Number of samples to throw away from the beginning of samples.
         every (int, optional): Stratification: use every `k`-th sample.
         names_ (str or list[str], optional): Filename containing the names of dimensions or list of names. Default is None, that leads to generic names.
-        nominal_ (str or np.ndarray, optional): Filename or `(d,)` numpy array of nominals to be shown as vertical bars on top of 1d PDFs, and dots on top of 2d PDFs.
-        prange_ (str or np.ndarray, optional): Filename or `(d,2)` numpy array of dimensional ranges to be shown as 'box' priors.
+        nominal_ (str or np.ndarray, optional): Filename or :math:`(d,)` numpy array of nominals to be shown as vertical bars on top of 1d PDFs, and dots on top of 2d PDFs.
+        prange_ (str or np.ndarray, optional): Filename or :math:`(d,2)` numpy array of dimensional ranges to be shown as 'box' priors.
         show_2dsamples (bool, optional): Whether or not to display the samples on top of 2d contour plots.
         lsize (int or float, optional): Title size and X- and Y- label size.
         zsize (int or float, optional): X- and Y- tick label size.
@@ -889,8 +905,11 @@ def plot_pdfs(ind_show=None, plot_type='tri', pdf_type='hist',
             axarr.append(thisax)
             figs.append(fig)
 
-        plot_pdf1d(samples[:, i], pltype=pdf_type, ax=thisax)
-        thisax.set_ylim(bottom=0)
+        if pdf_type == 'sam':
+            thisax.plot(np.arange(samples.shape[0]), samples[:, i], '-', linewidth=1.0)
+        else:
+            plot_pdf1d(samples[:, i], pltype=pdf_type, ax=thisax)
+            thisax.set_ylim(bottom=0)
 
         if nominal_ is not None:
             plot_pdf1d(np.array(nominals[ind_show[i]], ndmin=2), pltype='nom',
@@ -904,14 +923,14 @@ def plot_pdfs(ind_show=None, plot_type='tri', pdf_type='hist',
         x0, x1 = thisax.get_xlim()
         y0, y1 = thisax.get_ylim()
         # thisax.set_aspect((x1 - x0) / (y1 - y0))
-        thisax.set_title('PDF of ' + names[ind_show[i]], fontsize=lsize)
+        thisax.set_title(names[ind_show[i]], fontsize=lsize)
 
         if plot_type == 'tri':
             if i == 0:
                 thisax.set_ylabel(names[ind_show[i]], size=lsize)
             if i == npar - 1:
                 thisax.set_xlabel(names[ind_show[i]], size=lsize)
-                thisax.tick_params(axis='x', which='major', labelsize=zsize)
+            thisax.tick_params(axis='x', which='major', labelsize=zsize)
             if i > 0:
                 thisax.yaxis.set_ticks_position("right")
 
@@ -937,10 +956,14 @@ def plot_pdfs(ind_show=None, plot_type='tri', pdf_type='hist',
             elif plot_type == 'inds':
                 break
 
-            plot_pdf2d(samples[:, j], samples[:, i],
-                       pltype='kde', color='b', ncont=15, lwidth=1, ax=thisax)
-            if show_2dsamples:
-                thisax.plot(samples[:, j], samples[:, i], 'ko', markeredgecolor='white', markersize=5, zorder=-1000)
+            if pdf_type == 'sam':
+                plot_pdf2d(samples[:, j], samples[:, i],
+                           pltype='sam', color='k', mstyle='o', ax=thisax)
+            else:
+                plot_pdf2d(samples[:, j], samples[:, i],
+                           pltype='kde', color='b', ncont=15, lwidth=1, ax=thisax)
+                if show_2dsamples:
+                    thisax.plot(samples[:, j], samples[:, i], 'ko', markeredgecolor='white', markersize=5, zorder=-1000)
 
             if nominal_ is not None:
                 plot_pdf2d(nominals[ind_show[j]], nominals[ind_show[i]],
@@ -953,10 +976,10 @@ def plot_pdfs(ind_show=None, plot_type='tri', pdf_type='hist',
             if plot_type == 'tri':
                 if j == 0:
                     thisax.set_ylabel(names[ind_show[i]], size=lsize)
-                    thisax.tick_params(axis='y', which='major', labelsize=zsize)
+                thisax.tick_params(axis='y', which='major', labelsize=zsize)
                 if i == npar - 1:
                     thisax.set_xlabel(names[ind_show[j]], size=lsize)
-                    thisax.tick_params(axis='x', which='major', labelsize=zsize)
+                thisax.tick_params(axis='x', which='major', labelsize=zsize)
             elif plot_type == 'ind':
                 thisax.set_ylabel(names[ind_show[i]], size=lsize)
                 thisax.set_xlabel(names[ind_show[j]], size=lsize)
@@ -981,8 +1004,8 @@ def plot_ens(xdata, ydata,
     """Plotting an ensemble of `y` values versus input `x`.
 
     Args:
-        xdata (np.ndarray): Input values, an 1d array of size `(N,)`.
-        ydata (np.ndarray): Output values, a 2d array of size `(N,M)`.
+        xdata (np.ndarray): Input values, an 1d array of size :math:`(N,)`.
+        ydata (np.ndarray): Output values, a 2d array of size :math:`(N,M)`.
         color (str, optional): Plot color.
         lw (int or float, optional): Linewidth.
         ms (int or float, optional): Markersize.
@@ -991,7 +1014,7 @@ def plot_ens(xdata, ydata,
         mec (str, optional): Marker edge color
         connected (bool, optional): Whether to connect the data dots or not.
         interp (bool, optional): Whether to have smooth interpolation or not.
-        offset (tuple, optional): Tuple of (shift, scale) to preprocess y-data, if needed, both shift and scale are either None or 1d arrays of size `(d,)`.
+        offset (tuple, optional): Tuple of (shift, scale) to preprocess y-data, if needed, both shift and scale are either None or 1d arrays of size :math:`(d,)`.
         ax (plt.Axes, optional): Axis handle. If None, use the current axis.
     Note:
         ax is changed as a result of this function. Further beautification and figure saving should be done outside this function.
@@ -1036,7 +1059,7 @@ def plot_ens(xdata, ydata,
     if connected:
         for i in range(nsam):
             ax.plot(xdata_, ydata_[:, i],
-                       color=color, linewidth=lw)
+                       color=color, linewidth=lw, label=label)
     else:
         for i in range(nsam):
             ax.plot(xdata_, ydata_[:, i], color=color,
@@ -1054,17 +1077,17 @@ def plot_vars(xdata, ydata, variances=None, ysam=None, stdfactor=1.,
     """Plotting mean predictions with multicolor variances as error bars.
 
     Args:
-        xdata (np.ndarray): Input values, an 1d array of size `(N,)`.
-        ydata (np.ndarray): Output values, a 1d array of size `(N,)`.
-        variances (None, optional): Variances, a 2d array of size `(N,K)`.
-        ysam (None, optional): True samples, a 2d array of size `(N,M)`.
+        xdata (np.ndarray): Input values, an 1d array of size :math:`(N,)`.
+        ydata (np.ndarray): Output values, a 1d array of size :math:`(N,)`.
+        variances (None, optional): Variances, a 2d array of size :math:`(N,K)`.
+        ysam (None, optional): True samples, a 2d array of size :math:`(N,M)`.
         stdfactor (float, optional): Factor in front of st.dev. for plotting (e.g. `1.0` or `3.0`).
         varlabels (list[str], optional): List of `K` labels for each variance. If None, the code comes up with generic names.
         varcolors (list[str], optional): List of `K` variance colors. If None, the code uses shades of grey (not fifty).
         grid_show (bool, optional): Whether or not to show the grid.
         connected (bool, optional): Whether to connect the data dots or not.
         interp (bool, optional): Whether to have smooth interpolation or not.
-        offset (tuple, optional): Tuple of (shift, scale) to preprocess y-data, if needed, both shift and scale are either None or 1d arrays of size `(d,)`.
+        offset (tuple, optional): Tuple of (shift, scale) to preprocess y-data, if needed, both shift and scale are either None or 1d arrays of size :math:`(d,)`.
         ax (plt.Axes, optional): Axis handle. If None, use the current axis.
     Note:
         ax is changed as a result of this function. Further beautification and figure saving should be done outside this function.
@@ -1161,8 +1184,8 @@ def plot_shade(xdata, ydata, nq=51, cmap=mpl.cm.BuGn,
     """Plotting quantile-shaded predictions given dataset.
 
     Args:
-        xdata (np.ndarray): Input values, an 1d array of size `(N,)`.
-        ydata (np.ndarray): Output values, a 2d array of size `(N,M)`.
+        xdata (np.ndarray): Input values, an 1d array of size :math:`(N,)`.
+        ydata (np.ndarray): Output values, a 2d array of size :math:`(N,M)`.
         nq (int, optional): Number of quantiles.
         cmap (mpl.Cm, optional): Colormap. Defaults to BuGn.
         bounds_show (bool, optional): Whether to highlight the bounds.
@@ -1293,7 +1316,6 @@ def plot_1d_anchored(models, modelpars,
         modellabels (None, optional): Labels/names of the models for legend.
         legend_show (bool, optional): Whether to show the legend or not.
         clearax (bool, optional): Clear axes ticks and labels for less busy plotting.
-        verbose_labels (bool, optional): Optionally, annotates the points showing their coordinates. Makes sense for low-dim cases.
         ncolrow (tuple, optional): Number of columns and rows in a tuple. Defaults to (3, 5).
     """
     ncol, nrow = ncolrow
@@ -1494,9 +1516,9 @@ def plot_fcn_1d_slice(fcn, domain, idim=0, nom=None, ngr=133, color='b', lw=2, a
 
     Args:
         fcn (callable): Function evaluator.
-        domain (np.ndarray): Domain of evaluation, a 2d array of size `(d, 2)`.
+        domain (np.ndarray): Domain of evaluation, a 2d array of size :math:`(d, 2)`.
         idim (int, optional): Dimension, with respect to which the slice is plotted.
-        nom (None, optional): Nominal values, an 1d array of size `(d,)`.
+        nom (None, optional): Nominal values, an 1d array of size :math:`(d,)`.
         ngr (int, optional): Number of grid points, i.e. resolution.
         color (str, optional): Color of the plot.
         lw (int, optional): Line width.
@@ -1526,12 +1548,11 @@ def plot_fcn_2d_slice(fcn, domain, idim=0, jdim=1, nom=None, ngr=33, ax=None):
 
     Args:
         fcn (callable): Function evaluator.
-        domain (np.ndarray): Domain of evaluation, a 2d array of size `(d, 2)`.
+        domain (np.ndarray): Domain of evaluation, a 2d array of size :math:`(d, 2)`.
         idim (int, optional): First dimension, with respect to which the slice is plotted.
         jdim (int, optional): Second dimension, with respect to which the slice is plotted.
-        nom (None, optional): Nominal values, an 1d array of size `(d,)`.
+        nom (None, optional): Nominal values, an 1d array of size :math:`(d,)`.
         ngr (int, optional): Number of grid points per dimension, i.e. resolution.
-        color (str, optional): Color of the plot.
         ax (plt.Axes, optional): Axis handle. If None, use the current axis.
     Note:
         ax is changed as a result of this function. Further beautification and figure saving should be done outside this function.
@@ -1566,13 +1587,13 @@ def plot_uc_sample(pred_sam, data, nqt=111, label='', ax=None):
     """Plotting uncertainty calibration figure given samples.
 
     Args:
-        pred_sam (np.ndarray): Samples, in a 2d array of size `(M,N)`.
-        data (np.ndarray): Data, in a 1d array of size `(N,)`.
+        pred_sam (np.ndarray): Samples, in a 2d array of size :math:`(M,N)`.
+        data (np.ndarray): Data, in a 1d array of size :math:`(N,)`.
         nqt (int, optional): Number of quantiles used. Essentially, the resolution.
         label (str, optional): Custom label.
         ax (plt.Axes, optional): Axis handle. If None, use the current axis.
     Returns:
-        tuple: Data fractions and quantile values corresponding to these fractions.
+        tuple: Data fractions, quantile values, and area to the diagonal.
     Note:
         ax is changed as a result of this function. Further beautification and figure saving should be done outside this function.
     """
@@ -1584,6 +1605,8 @@ def plot_uc_sample(pred_sam, data, nqt=111, label='', ax=None):
     frac_qq = np.zeros_like(qq)
     for i in range(nqt):
         frac_qq[i] = np.sum(np.array([int(j) for j in data<pred_qt[i,:]]))/nx
+
+    area_to_diagonal = np.trapezoid(np.abs(frac_qq - qq), qq)
 
     if ax is None:
         plt.figure(figsize=(9,9))
@@ -1599,7 +1622,7 @@ def plot_uc_sample(pred_sam, data, nqt=111, label='', ax=None):
         ax.plot([0,1], [0,1], '--', linewidth=2)
 
 
-    return frac_qq, qq
+    return frac_qq, qq, area_to_diagonal
 
 #############################################################
 
@@ -1607,14 +1630,14 @@ def plot_uc_exact(pred_mean, pred_std, data, nqt=111, label='', ax=None):
     """Plotting uncertainty calibration figure given mean and standard deviation of predictions.
 
     Args:
-        pred_mean (np.ndarray): Prediction mean, in a 1d array of size `(N,)`.
-        pred_std (np.ndarray): Prediction standard deviation, in a 1d array of size `(N,)`.
-        data (np.ndarray): Data, in a 1d array of size `(N,)`.
+        pred_mean (np.ndarray): Prediction mean, in a 1d array of size :math:`(N,)`.
+        pred_std (np.ndarray): Prediction standard deviation, in a 1d array of size :math:`(N,)`.
+        data (np.ndarray): Data, in a 1d array of size :math:`(N,)`.
         nqt (int, optional): Number of quantiles used. Essentially, the resolution.
         label (str, optional): Custom label.
         ax (plt.Axes, optional): Axis handle. If None, use the current axis.
     Returns:
-        tuple: Data fractions and quantile values corresponding to these fractions.
+        tuple: Data fractions, quantile values, and area to the diagonal.
     Note:
         ax is changed as a result of this function. Further beautification and figure saving should be done outside this function.
     """
@@ -1632,6 +1655,8 @@ def plot_uc_exact(pred_mean, pred_std, data, nqt=111, label='', ax=None):
     for i in range(nqt):
         frac_qq_exact[i] = np.sum(np.array([int(j) for j in data<pred_qt_exact[i,:]]))/nx
 
+    area_to_diagonal = np.trapezoid(np.abs(frac_qq_exact - qq), qq)
+
     if ax is None:
         plt.figure(figsize=(9,9))
         plt.plot(qq, frac_qq_exact, 'o-', markersize=1, label=label)
@@ -1646,7 +1671,7 @@ def plot_uc_exact(pred_mean, pred_std, data, nqt=111, label='', ax=None):
         ax.plot([0,1], [0,1], '--', linewidth=2)
 
 
-    return frac_qq_exact, qq
+    return frac_qq_exact, qq, area_to_diagonal
 
 
 def plot_samples_pdfs(xx_list, legends=None, colors=None, file_prefix='x', title=''):
@@ -1690,16 +1715,16 @@ def plot_samples_pdfs(xx_list, legends=None, colors=None, file_prefix='x', title
 
     return
 
-def plot_1d(func, domain, ax=None, idim=0, odim=0, nom=None, ngr=100, color='orange', label='', lstyle='-', figname='func1d.png'):
+def plot_1d(func, domain, ax=None, idim=0, odim=0, nom=None, ngr=100, color='orange', label='', lstyle='-', figname=None):
     """Plotting 1d slice of a function.
 
     Args:
         func (callable): The callable function of interest.
-        domain (np.ndarray): A dx2 array indicating the domain of the function.
+        domain (np.ndarray): A :math:`(d,2)` array indicating the domain of the function.
         ax (None, optional): Axis object to plot on. If None, plots on current axis.
         idim (int, optional): Input dimension to plot against.
         odim (int, optional): Output QoI to plot against. Useful for multioutput funtions.
-        nom (np.ndarray, optional): Nominal value to fix non-plotted dimensions at. An array of size d. If None, uses the domain center.
+        nom (np.ndarray, optional): Nominal value to fix non-plotted dimensions at. An array of size `d`. If None, uses the domain center.
         ngr (int, optional): Number of grid points.
         color (str, optional): Color of the graph.
         label (str, optional): Label of the graph.
@@ -1721,21 +1746,22 @@ def plot_1d(func, domain, ax=None, idim=0, odim=0, nom=None, ngr=100, color='ora
     yg = func(xg)[:, odim]
 
     ax.plot(xg[:, idim], yg, color=color, label=label, linestyle=lstyle)
-    plt.savefig(figname)
+    if figname is not None:
+        plt.savefig(figname)
 
     return
 
-def plot_2d(func, domain, ax=None, idim=0, jdim=1, odim=0, nom=None, ngr=33, figname='func2d.png'):
+def plot_2d(func, domain, ax=None, idim=0, jdim=1, odim=0, nom=None, ngr=33, figname=None):
     """Plotting 2d slice of a function.
 
     Args:
         func (callable): The callable function of interest.
-        domain (np.ndarray): A dx2 array indicating the domain of the function.
+        domain (np.ndarray): A :math:`(d,2)` array indicating the domain of the function.
         ax (None, optional): Axis object to plot on. If None, plots on current axis.
         idim (int, optional): First input dimension to plot against.
         jdim (int, optional): Second input dimension to plot against.
         odim (int, optional): Output QoI to plot against. Useful for multioutput funtions.
-        nom (np.ndarray, optional): Nominal value to fix non-plotted dimensions at. An array of size d. If None, uses the domain center.
+        nom (np.ndarray, optional): Nominal value to fix non-plotted dimensions at. An array of size `d`. If None, uses the domain center.
         ngr (int, optional): Number of grid points.
         figname (str, optional): Figure name to save.
     """
@@ -1761,7 +1787,8 @@ def plot_2d(func, domain, ax=None, idim=0, jdim=1, odim=0, nom=None, ngr=33, fig
     cs = ax.contourf(X, Y, yg, 22, cmap='RdYlGn_r')
     ax.contour(cs, colors='k', linewidths=0.5)
     plt.colorbar(cs, ax=ax)
-    plt.savefig(figname)
+    if figname is not None:
+        plt.savefig(figname)
 
     return
 
@@ -1791,15 +1818,16 @@ def plot_parity(y1, y2, labels=['y1', 'y2'], filename='parity.png'):
 
 #############################################################
 
-def plot_cov(mm, cc, ngr=100, f=3., pnames=None, ax=None, savefig=False):
+def plot_cov(mm, cc, ngr=100, f=3., pnames=None, color=None, ax=None, savefig=False):
     """Plotting covariance contour given mean and covariance matrix.
 
     Args:
-        mm (np.ndarray): Mean, an 1d array of size `(2,)`.
-        cc (np.ndarray): Covariance matrix, a 2d array of size `(2,2)`.
+        mm (np.ndarray): Mean, an 1d array of size :math:`(2,)`.
+        cc (np.ndarray): Covariance matrix, a 2d array of size :math:`(2,2)`.
         ngr (int, optional): Number of grid points per dimension, i.e. resolution.
         f (float, optional): Factor for the plotting range in terms of standard deviations.
         pnames (list, optional): List of parameter names. If None, generic names are used.
+        color (str, optional): Color of the contour. If None, use default color cycle.
         ax (plt.Axes, optional): Axis handle. If None, use the current axis.
         savefig (bool, optional): Whether to save the figure or not.
     """
@@ -1818,7 +1846,7 @@ def plot_cov(mm, cc, ngr=100, f=3., pnames=None, ax=None, savefig=False):
         XY = np.dstack((X, Y))
 
         Z = rv.pdf(XY)
-        ax.contour(X,Y,Z)
+        ax.contour(X,Y,Z, colors=color)
 
         if savefig:
             ax.set_xlabel(pnames[0])
@@ -1826,21 +1854,29 @@ def plot_cov(mm, cc, ngr=100, f=3., pnames=None, ax=None, savefig=False):
             plt.savefig(f'cov_{pnames[0]}_{pnames[1]}.png')
 
     except ValueError:
-        print(f"Covariance for pair ({i},{j}) is not positive-semidefinite.")
+        print(f"Covariance is not positive-semidefinite.")
 
 
-def plot_cov_tri(mean, cov, names=None, figname='cov_tri.png'):
+def plot_cov_tri(mean, cov, names=None, color=None, axarr=None, figname='cov_tri.png'):
     """Plots covariance in a triangular pairwise way.
 
     Args:
-        mean (np.ndarray): Mean, an 1d array of size `(npar,)`.
-        cov (np.ndarray): Covariance matrix, a 2d array of size `(npar,npar)`.
+        mean (np.ndarray): Mean, an 1d array of size :math:`(npar,)`.
+        cov (np.ndarray): Covariance matrix, a 2d array of size :math:`(npar,npar)`.
         names (list, optional): List of parameter names. If None, generic names are used.
+        color (str, optional): Color of the contour. If None, use default color cycle.
+        axarr (np.ndarray, optional): Array of axes. If None, a new figure is created.
         figname (str, optional): Figure filename to save.
+
+    Returns:
+        np.ndarray: Array of axes used for plotting.
     """
     npar = mean.shape[0]
-    figs, axarr = plt.subplots(npar, npar, figsize=(15, 15))
-    if npar==1: axarr=[[axarr]]
+
+    if axarr is None:
+        figs, axarr = plt.subplots(npar, npar, figsize=(15, 15))
+        if npar==1: axarr=[[axarr]]
+
 
     if names is None:
         names = ['p'+str(j) for j in range(npar)]
@@ -1851,7 +1887,7 @@ def plot_cov_tri(mean, cov, names=None, figname='cov_tri.png'):
         x = np.linspace(mean[i]-3.0*np.sqrt(cov[i,i]), mean[i]+3.0*np.sqrt(cov[i,i]), 100)
         rv = ss.norm(mean[i], np.sqrt(cov[i,i]))
         z = rv.pdf(x)
-        thisax.plot(x, z, 'b-')
+        thisax.plot(x, z, '-', color=color)
 
         if i == 0:
             thisax.set_ylabel(names[i])
@@ -1868,7 +1904,7 @@ def plot_cov_tri(mean, cov, names=None, figname='cov_tri.png'):
 
             mm = np.array([mean[j], mean[i]])
             cc = np.array([[cov[j,j], cov[i,j]],[cov[j,i], cov[i,i]]])
-            plot_cov(mm, cc, f=3., pnames=[f'p{i}', f'p{j}'], ngr=100, ax=thisax, savefig=False)
+            plot_cov(mm, cc, f=3., pnames=[f'p{i}', f'p{j}'], color=color, ngr=100, ax=thisax, savefig=False)
 
             # x0, x1 = thisax.get_xlim()
             # y0, y1 = thisax.get_ylim()
@@ -1883,6 +1919,8 @@ def plot_cov_tri(mean, cov, names=None, figname='cov_tri.png'):
 
     plt.savefig(figname)
 
+    return axarr
+
 ####################################################################################
 
 
@@ -1893,8 +1931,8 @@ def plot_sensmat(sensdata,pars,cases,par_labels=[],case_labels=[],cutoff=-1000.,
         sensdata (np.ndarray): 2d array of sensitivity data, size (ncases, npars).
         pars (list): List of parameter names.
         cases (list): List of case names.
-        par_labels (list, optional): List of parameter labels for plotting. Defaults to None, which uses generic names.
-        case_labels (list, optional): List of case labels for plotting. Defaults to None, which uses generic names.
+        par_labels (list, optional): List of parameter labels for plotting. Defaults to ``[]``, which uses generic names.
+        case_labels (list, optional): List of case labels for plotting. Defaults to ``[]``, which uses generic names.
         cutoff (float, optional): Cutoff value for sensitivity inclusion. Defaults to -1000.
         figname (str, optional): Figure filename to save. Defaults to 'sensmat.png'.
     """
@@ -1989,15 +2027,15 @@ def plot_sensmat(sensdata,pars,cases,par_labels=[],case_labels=[],cutoff=-1000.,
     plt.savefig(figname)
 
 
-def plot_joy(sams_list, xcond, outnames, color_list, nominal=None, offset_factor=1.0, ax=None, figname='joyplot.png'):
+def plot_joy(sams_list, xcond, outnames, color_list, nominal=None, offset_factor=1.0, ax=None, figname=None):
     r"""Plots a joyplot of multiple sample sets along given output conditions.
 
     Args:
-        sams_list (list[np.ndarray]): List of sample sets, each in a 2d array of size `(M,N)`.
+        sams_list (list[np.ndarray]): List of sample sets, each in a 2d array of size :math:`(M,N)`.
         xcond (list[float]): List of output condition values, length N.
         outnames (list[str]): List of output condition names, length N.
         color_list (list[str]): List of colors for each sample set.
-        nominal (np.ndarray, optional): Nominal values for each output condition, an 1d array of size `(N,)`. Defaults to None.
+        nominal (np.ndarray, optional): Nominal values for each output condition, an 1d array of size :math:`(N,)`. Defaults to None.
         offset_factor (float, optional): Factor to scale the pdf heights. Defaults to 1.0.
         ax (plt.Axes, optional): Axis handle. If None, use the current axis.
         figname (str, optional): Figure filename to save.
@@ -2027,4 +2065,5 @@ def plot_joy(sams_list, xcond, outnames, color_list, nominal=None, offset_factor
     ax.set_yticks(xcond)
     ax.set_yticklabels(outnames)
     plt.tight_layout()
-    plt.savefig(figname)
+    if figname is not None:
+        plt.savefig(figname)

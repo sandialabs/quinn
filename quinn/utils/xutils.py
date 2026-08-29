@@ -3,8 +3,12 @@
 
 import sys
 import os
+import inspect
 import itertools
 import numpy as np
+import importlib.util
+from pathlib import Path
+
 try:
     import dill as pk
 except ModuleNotFoundError:
@@ -36,8 +40,7 @@ def savepk(sobj, nameprefix='savestate'):
         sobj (any type): Object to be pickled.
         nameprefix (str, optional): Name prefix.
     """
-    with open(nameprefix + '.pk', 'wb') as f:
-        pk.dump(sobj, f, protocol=pk.HIGHEST_PROTOCOL)
+    pk.dump(sobj, open(nameprefix + '.pk', 'wb'), protocol=pk.HIGHEST_PROTOCOL)
 
 
 def loadpk(nameprefix='savestate'):
@@ -49,8 +52,7 @@ def loadpk(nameprefix='savestate'):
     Returns:
         any type: Unpickled object
     """
-    with open(nameprefix + '.pk', 'rb') as f:
-        return pk.load(f)
+    return pk.load(open(nameprefix + '.pk', 'rb'))
 
 ####################################################################
 ####################################################################
@@ -111,7 +113,7 @@ def sample_sphere(center=None, rad=1.0, nsam=100):
         nsam (int, optional): Number of samples requested. Defaults to 100.
 
     Returns:
-        np.ndarray: Array of size `(N,d)`
+        np.ndarray: Array of size :math:`(N,d)`
     """
     if center is None:
         center = np.zeros((3,))
@@ -134,7 +136,7 @@ def get_opt_bw(xsam, bwf=1.0):
     """Get the rule-of-thumb optimal bandwidth for kernel density estimation.
 
     Args:
-        xsam (np.ndarray): Data array, `(N,d)`
+        xsam (np.ndarray): Data array, :math:`(N,d)`
         bwf (float): Factor behind the scaling optimal rule
     Returns:
         np.ndarray: Array of length `d`, the optimal per-dimension bandwidth
@@ -160,8 +162,8 @@ def get_pdf(data, target):
     """Compute PDF given data at target points.
 
     Args:
-        data (np.ndarray): an `(N,d)` array of `N` samples in `d` dimensions
-        target np.ndarray): an `(M,d)` array of target points
+        data (np.ndarray): an :math:`(N,d)` array of `N` samples in `d` dimensions
+        target np.ndarray): an :math:`(M,d)` array of target points
 
     Returns:
         np.ndarray: PDF values at target
@@ -169,7 +171,7 @@ def get_pdf(data, target):
     assert(np.prod(np.var(data, axis=0))>0.0)
 
     # Python Scipy built-in method of KDE
-    kde_py=stats.gaussian_kde(data.T)
+    kde_py=stats.kde.gaussian_kde(data.T)
     dens=kde_py(target.T)
 
     # Return the target points and the probability density
@@ -288,3 +290,25 @@ def safe_cholesky(cov):
     assert(np.linalg.norm(cov - np.dot(lower, lower.T)) < 1.e-12)
 
     return lower
+
+####################################################################
+####################################################################
+
+def instantiate_classes_from_module(module_name):
+    """
+    Imports a module and returns a list of instantiated objects for every class in it.
+    Only classes defined inside the module are included (not imported ones).
+    """
+    module = importlib.import_module(module_name)
+    objects = []
+
+    for name, obj in inspect.getmembers(module, inspect.isclass):
+        # Only include classes actually defined in this module
+        if obj.__module__ == module_name:
+            try:
+                instance = obj()  # Try to instantiate without arguments
+                objects.append(instance)
+            except Exception as e:
+                print(f"Could not instantiate {name}: {e}")
+
+    return objects

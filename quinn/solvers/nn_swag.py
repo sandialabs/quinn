@@ -116,7 +116,10 @@ class NN_SWAG(NN_Ens):
                         d_mat = d_mat[-self.k :]
 
         self.means.append(np.squeeze(moment1))
-        self.cov_diags.append(np.squeeze(moment2 - np.power(moment1, 2)))
+        # Clipped at zero: this is a difference of two nearly equal numbers, so
+        # for a flat trajectory it can come out slightly negative by roundoff,
+        # and predict_sample() takes its square root.
+        self.cov_diags.append(np.maximum(np.squeeze(moment2 - np.power(moment1, 2)), 0.0))
         if self.cov_type == "lowrank":
             self.d_mats.append(np.squeeze(np.array(d_mat).T))
 

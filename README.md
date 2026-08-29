@@ -1,9 +1,9 @@
 Quantification of Uncertainties in Neural Networks (QUiNN) is a python library centered around various probabilistic wrappers over PyTorch modules in order to provide uncertainty estimation in Neural Network (NN) predictions.
 
 # Build the library
-	./build.sh 
-	or 
-	./setup.py build; setup.py install
+	./build.sh
+	or
+	pip install .
 
 # Requirements
 	numpy, scipy, matplotlib, pytorch

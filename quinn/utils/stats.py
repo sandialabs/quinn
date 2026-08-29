@@ -36,10 +36,10 @@ def get_domain(xx):
     """Get the domain of a given data array.
 
     Args:
-        xx (np.ndarray): A data array of size `(N,d)`.
+        xx (np.ndarray): A data array of size :math:`(N,d)`.
 
     Returns:
-        np.ndarray: `(d,2)` domain array.
+        np.ndarray: :math:`(d,2)` domain array.
     """
     _, ndim = xx.shape
     domain = np.empty((ndim, 2))
@@ -52,11 +52,11 @@ def intersect_domain(dom1, dom2):
     """Create an intersection domain/hypercube.
 
     Args:
-        dom1 (np.ndarray): `(d,2)` first domain array.
-        dom2 (np.ndarray): `(d,2)` second domain array.
+        dom1 (np.ndarray): :math:`(d,2)` first domain array.
+        dom2 (np.ndarray): :math:`(d,2)` second domain array.
 
     Returns:
-        np.ndarray: `(d,2)` intersection domain or None if no intersection.
+        np.ndarray: :math:`(d,2)` intersection domain or None if no intersection.
     """
     assert(dom1.shape[0]==dom2.shape[0])
     domain = np.empty_like(dom1)
@@ -74,7 +74,7 @@ def diam(xx):
     """Get the diameter of a given data array.
 
     Args:
-        xx (np.ndarray): A data array of size `(N,d)`.
+        xx (np.ndarray): A data array of size :math:`(N,d)`.
 
     Returns:
         float: diameter, i.e. max pairwise distance.

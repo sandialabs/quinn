@@ -65,6 +65,24 @@ Each branch creates the appropriate solver (``NN_MCMC``, ``NN_VI``, ``NN_Ens``,
 
 The underlying NN is a ``RNet`` with polynomial weight parametrization.
 
+
+``tutorial_ufit.ipynb`` — Interactive Tutorial for All UQ Methods
+------------------------------------------------------------------
+
+A Jupyter notebook that walks through all seven methods step-by-step,
+following the same problem setup as ``ex_ufit.py``.  Each method gets its
+own section with a plain-English explanation, runnable fit code, and an
+inline uncertainty plot.  Additional cells demonstrate the full shared API:
+
+- ``predict_ens(x, nens)`` — raw ``(M, N, o)`` ensemble array.
+- ``predict_mom_sample(x, msc, nsam)`` — mean, variance, and (optionally)
+  full covariance matrix.
+- ``predict(x)`` — convenience wrapper returning only the posterior mean.
+- ``print_params(names_only)`` — inspect weight names/values.
+
+A final side-by-side comparison overlays the posterior mean of all seven
+solvers on a single plot.
+
 Linear Regression
 =================
 

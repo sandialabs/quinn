@@ -9,10 +9,10 @@ def scale01ToDom(xx, dom):
        the inputs are in [0,1]^d.
 
     Args:
-        xx (np.ndarray): Nxd input array.
-        dom (np.ndarray): dx2 domain.
+        xx (np.ndarray): :math:`(N,d)` input array.
+        dom (np.ndarray): :math:`(d,2)` domain.
     Returns:
-        np.ndarray: Nxd scaled array.
+        np.ndarray: :math:`(N,d)` scaled array.
     Note:
         If input is outside [0,1]^d, a warning is given, but the scaling will happen nevertheless.
     """
@@ -25,10 +25,10 @@ def scaleDomTo01(xx, dom):
     """Scaling an array from a given domain to [0,1]^d.
 
     Args:
-        xx (np.ndarray): Nxd input array.
-        dom (np.ndarray): dx2 domain.
+        xx (np.ndarray): :math:`(N,d)` input array.
+        dom (np.ndarray): :math:`(d,2)` domain.
     Returns:
-        np.ndarray: Nxd scaled array.
+        np.ndarray: :math:`(N,d)` scaled array.
     Note:
         If input is outside domain, a warning is given, but the scaling will happen nevertheless.
     """
@@ -129,8 +129,8 @@ class ComposeMap(XMap):
         self.map1 = map1
         self.map2 = map2
 
-    def __repr__(self):
-        return f"ComposeMap({self.map1=}, {self.map2=}"
+    #def __repr__(self):
+    #    return f"ComposeMap({self.map1=}, {self.map2=}"
 
     def __call__(self, x):
         return self.map2(self.map1(x))
@@ -154,8 +154,8 @@ class LinearScaler(XMap):
         self.scale = scale
         return
 
-    def __repr__(self):
-        return f"Scaler({self.shift=}, {self.scale=}"
+    #def __repr__(self):
+    #    return f"Scaler({self.shift=}, {self.scale=}"
 
     def __call__(self, x):
         if self.shift is None:
@@ -224,7 +224,7 @@ class Domainizer(LinearScaler):
         """Initialize with a given domain.
 
         Args:
-            dom (np.ndarray): Domain of size `(d,2)` according to which the normalization happens.
+            dom (np.ndarray): Domain of size :math:`(d,2)` according to which the normalization happens.
         """
         super().__init__(shift=dom[:,0], scale=dom[:,1]-dom[:,0])
         return
@@ -244,8 +244,8 @@ class Affine(XMap):
         self.bias = bias
         return
 
-    def __repr__(self):
-        return f"Scaler({self.weight=}, {self.bias=}"
+    #def __repr__(self):
+    #    return f"Scaler({self.weight=}, {self.bias=}"
 
 
     def __call__(self, x):
